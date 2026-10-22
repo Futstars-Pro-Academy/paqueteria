@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Paquetería">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f8a5b'/%3E%3Cpath d='M32 12l20 11v18L32 52 12 41V23z' fill='%23f2c98d'/%3E%3Cpath d='M12 23l20 11 20-11M32 34v18' stroke='%230f5a3a' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<title>Registro de Paquetería Kimitec</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* Layout: banda verde con ilustración y fichas de indicadores clicables; gráfico de llegadas; formulario a la izquierda y registro (lista o galería) a la derecha; ficha de detalle en panel lateral. */
+:root{
+  --bg:#eef4f0; --panel:#ffffff; --ink:#132119; --muted:#5b6c62; --line:#d6e2da; --field:#f6faf7;
+  --g1:#0f5a3a; --g2:#1f8a5b; --g3:#7fd3a2; --accent:#1f8a5b; --accent-ink:#ffffff; --accent-soft:#dff3e7;
+  --amber:#e38b00; --amber-soft:#fff0d6; --coral:#e2483d; --coral-soft:#fde3e0; --sky:#1b7fc4; --sky-soft:#dcefff; --plum:#8a4fbf; --plum-soft:#f0e5fb;
+  --band-ink:#f2fbf5; --band-muted:#bfe6cf;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px; --shadow:0 1px 2px #0d2a1a14,0 6px 18px #0d2a1a10;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1511; --panel:#15211b; --ink:#e5efe9; --muted:#93a79b; --line:#26362d; --field:#101b16;
+  --g1:#0a3d28; --g2:#16704a; --g3:#5cc28a; --accent:#45c283; --accent-ink:#06120c; --accent-soft:#18392a;
+  --amber:#f2a93b; --amber-soft:#3a2a10; --coral:#f27b70; --coral-soft:#3d1c19; --sky:#5fb3ec; --sky-soft:#13304a; --plum:#bb8ae6; --plum-soft:#2e1d40;
+  --band-ink:#eefaf3; --band-muted:#a9d9bd; --shadow:0 1px 2px #0006,0 6px 18px #0004; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1511; --panel:#15211b; --ink:#e5efe9; --muted:#93a79b; --line:#26362d; --field:#101b16;
+  --g1:#0a3d28; --g2:#16704a; --g3:#5cc28a; --accent:#45c283; --accent-ink:#06120c; --accent-soft:#18392a;
+  --amber:#f2a93b; --amber-soft:#3a2a10; --coral:#f27b70; --coral-soft:#3d1c19; --sky:#5fb3ec; --sky-soft:#13304a; --plum:#bb8ae6; --plum-soft:#2e1d40;
+  --band-ink:#eefaf3; --band-muted:#a9d9bd; --shadow:0 1px 2px #0006,0 6px 18px #0004; color-scheme:dark}
+*{box-sizing:border-box}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{margin:0;-webkit-text-size-adjust:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+svg{display:block}
+
+/* Cabecera */
+header.band{background:linear-gradient(135deg,var(--g1) 0%,var(--g2) 70%,#2aa16b 100%);color:var(--band-ink);position:relative;overflow:hidden}
+header.band .wrap{padding-block:24px 22px;display:flex;flex-direction:column;gap:20px;position:relative}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.hero-text{display:flex;flex-direction:column;gap:6px;min-width:0}
+.eyebrow{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;color:var(--band-muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.05;margin:0;text-wrap:balance}
+.testpill{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:#00000026;border:1px solid #ffffff33;border-radius:999px;padding:4px 12px;font-size:.82rem}
+.testpill b{font-family:var(--f-mono);font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 3px #e38b0040}
+.hero-art{flex:none;width:min(300px,34vw)}
+@media (max-width:640px){.hero-art{display:none}}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:720px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{font:inherit;text-align:left;border:0;cursor:pointer;border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;background:#ffffff1c;color:var(--band-ink);border:1px solid #ffffff26;transition:transform .15s,background .15s;min-width:0}
+.kpi:hover{background:#ffffff2e;transform:translateY(-2px)}
+.kpi[aria-pressed="true"]{background:var(--panel);color:var(--ink);border-color:transparent}
+.kpi .ic{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.kpi .tx{display:flex;flex-direction:column;min-width:0}
+.kpi .n{font-family:var(--f-mono);font-size:1.55rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:.78rem;opacity:.85;margin-top:3px}
+.ic-g{background:var(--accent-soft);color:var(--accent)} .ic-a{background:var(--amber-soft);color:var(--amber)} .ic-s{background:var(--sky-soft);color:var(--sky)} .ic-c{background:var(--coral-soft);color:var(--coral)}
+
+/* Layout principal */
+main.wrap{padding-block:22px 56px;display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:960px){main.wrap{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.15rem;letter-spacing:.02em;margin:0;display:flex;align-items:center;gap:8px}
+.muted{color:var(--muted)}
+
+/* Formulario */
+form.card{padding:18px;display:flex;flex-direction:column;gap:14px;border-top:4px solid var(--accent)}
+.fhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ref{font-family:var(--f-mono);font-size:.78rem;background:var(--accent-soft);color:var(--accent);padding:3px 8px;border-radius:6px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lbl{font-weight:600;font-size:.82rem;color:var(--ink);display:flex;align-items:center;gap:6px}
+.lbl svg{color:var(--accent)}
+.opt{font-weight:400;color:var(--muted)}
+.inp,textarea{font:inherit;color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:8px;padding:10px 11px;width:100%;min-width:0;transition:border-color .15s,box-shadow .15s}
+.inp:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;min-height:62px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:420px){.row2{grid-template-columns:minmax(0,1fr)}}
+button:focus-visible,a:focus-visible,.kpi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Combo (desplegable con texto libre) */
+.combo{position:relative;min-width:0}
+.combo .inp{padding-right:40px}
+.combo .tg{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.combo .tg:hover{background:var(--accent-soft);color:var(--accent)}
+.combo[data-open] .tg svg{transform:rotate(180deg)}
+.menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px #0d2a1a30;max-height:240px;overflow:auto;padding:4px;list-style:none;margin:0}
+.menu li{padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.menu li[aria-selected="true"],.menu li:hover{background:var(--accent-soft)}
+.menu li .k{font-size:.72rem;color:var(--muted);font-family:var(--f-mono);flex:none}
+.menu li.new{color:var(--accent);font-weight:600}
+.menu li.none{color:var(--muted);cursor:default;background:none}
+.menu mark{background:none;color:var(--accent);font-weight:700}
+
+/* Estado */
+.states{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.states input{position:absolute;opacity:0;pointer-events:none}
+.states label{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;font-weight:600;font-size:.86rem;background:var(--field);transition:all .15s;color:var(--muted)}
+.states label:hover{border-color:var(--muted)}
+.states input:checked+label[data-e="Correcto"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.states input:checked+label[data-e="Dañado"]{border-color:var(--coral);background:var(--coral-soft);color:var(--coral)}
+.states input:checked+label[data-e="Incompleto"]{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}
+.states input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Bultos */
+.stepper{display:flex;align-items:stretch;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--field)}
+.stepper button{width:40px;border:0;background:transparent;color:var(--accent);font-size:1.2rem;font-weight:700;cursor:pointer}
+.stepper button:hover{background:var(--accent-soft)}
+.stepper input{border:0;background:transparent;text-align:center;font:inherit;font-family:var(--f-mono);font-weight:700;color:var(--ink);width:100%;min-width:0;padding:9px 0}
+.stepper input:focus{outline:none}
+.stepper:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* Foto */
+.drop{border:2px dashed var(--line);border-radius:10px;padding:14px;display:flex;gap:14px;align-items:center;background:var(--field);cursor:pointer;transition:all .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .pic{width:76px;height:76px;border-radius:8px;flex:none;object-fit:cover;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.drop .ph{flex:1;min-width:0;font-size:.86rem;color:var(--muted)}
+.drop .ph strong{display:block;color:var(--ink);font-size:.92rem}
+
+.btn{font:inherit;font-weight:600;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07);color:var(--accent-ink);transform:translateY(-1px)}
+.btn.big{padding:13px 16px;font-size:1rem}
+.btn.small{padding:6px 10px;font-size:.82rem;border-radius:7px}
+.btn[disabled]{opacity:.55;cursor:not-allowed;transform:none}
+.formmsg{font-size:.86rem;color:var(--coral);min-height:1.2em;margin:-4px 0}
+.to{font-size:.82rem;color:var(--muted)}
+.to b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+
+/* Aviso */
+.notice{border:0;background:linear-gradient(135deg,var(--sky-soft),var(--accent-soft));border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.notice h3{margin:0;font-family:var(--f-display);font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.notice p{margin:0;font-size:.9rem}
+.notice .acts{display:flex;flex-wrap:wrap;gap:8px}
+.cp{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.cprow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:8px;align-items:start}
+.cpl{font-size:.78rem;font-weight:700;color:var(--muted);padding-top:6px}
+.cpv{font-family:var(--f-mono);font-size:.76rem;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;overflow-wrap:anywhere;user-select:all;min-width:0}
+.mailprev{font-family:var(--f-mono);font-size:.76rem;white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:170px;overflow:auto;user-select:all}
+
+/* Gráficos */
+.charts{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
+@media (max-width:720px){.charts{grid-template-columns:minmax(0,1fr)}}
+.chart{padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.chart h3{margin:0;font-size:.9rem;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.chart h3 span{font-weight:400;color:var(--muted);font-size:.8rem}
+.bars{width:100%;height:auto}
+.bars text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.bars .v{fill:var(--ink);font-weight:700}
+.bars rect.b{fill:var(--g3);transition:fill .15s}
+.bars rect.b.today{fill:var(--accent)}
+.bars g:hover rect.b{fill:var(--amber)}
+.top{display:flex;flex-direction:column;gap:8px}
+.top .tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:.85rem}
+.top .tr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .tr b{font-family:var(--f-mono)}
+.top .bar{grid-column:1/-1;height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+.top .bar i{display:block;height:100%;border-radius:4px}
+
+/* Registro */
+section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolbar .search{flex:1;min-width:200px;position:relative}
+.toolbar .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.toolbar .search .inp{padding-left:36px}
+.views{display:flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.views button{font:inherit;border:0;background:transparent;color:var(--muted);padding:8px 11px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600}
+.views button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.84rem;font-weight:600;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.chip .c{font-family:var(--f-mono);font-size:.75rem;opacity:.8}
+.chip .sw{width:8px;height:8px;border-radius:50%}
+
+.list{display:flex;flex-direction:column;overflow:hidden}
+.entry{display:grid;grid-template-columns:6px 64px minmax(0,1fr) auto;gap:0 14px;align-items:center;padding:12px 16px 12px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.entry:hover{background:var(--field)}
+.entry:last-child{border-bottom:0}
+.stripe{align-self:stretch;margin:-12px 0;width:6px}
+.st-Correcto{background:var(--accent)}.st-Dañado{background:var(--coral)}.st-Incompleto{background:var(--amber)}
+.thumb{width:64px;height:64px;border-radius:9px;object-fit:cover;display:block;background:var(--accent-soft)}
+.noimg{width:64px;height:64px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.einfo{min-width:0;display:flex;flex-direction:column;gap:3px}
+.etop{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.eprov{font-weight:700;font-size:1.02rem;overflow-wrap:anywhere}
+.ecode{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.emeta{font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.emeta b{color:var(--ink);font-weight:600}
+.carrier{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink)}
+.mono{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;color:#fff;font-family:var(--f-body);flex:none}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.pill{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
+.p-ok{background:var(--accent-soft);color:var(--accent)}.p-bad{background:var(--coral-soft);color:var(--coral)}.p-warn{background:var(--amber-soft);color:var(--amber)}.p-sky{background:var(--sky-soft);color:var(--sky)}.p-n{background:var(--field);color:var(--muted);border:1px solid var(--line)}
+.eacts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:600px){.entry{grid-template-columns:6px 52px minmax(0,1fr);row-gap:10px}.thumb,.noimg{width:52px;height:52px}.eacts{grid-column:3;justify-content:flex-start}}
+
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.tile{overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;padding:0;text-align:left;font:inherit;color:inherit}
+.tile:hover{transform:translateY(-3px);box-shadow:0 12px 28px #0d2a1a26}
+.tile .img{aspect-ratio:4/3;width:100%;max-width:100%;object-fit:cover;display:block;background:var(--accent-soft)}
+.tile .noimg{width:100%;height:auto;aspect-ratio:4/3;border-radius:0}
+.tile .tb{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;border-top:4px solid var(--line);min-width:0}
+.tile .tb.st-Correcto{border-top-color:var(--accent);background:none}.tile .tb.st-Dañado{border-top-color:var(--coral);background:none}.tile .tb.st-Incompleto{border-top-color:var(--amber);background:none}
+.tile .tp{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .ts{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.empty{padding:40px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.empty strong{color:var(--ink);font-size:1.05rem}
+.state{padding:14px 16px;font-size:.88rem;color:var(--muted)}
+.state.err{color:var(--coral)}
+
+/* Panel de detalle */
+.scrim{position:fixed;inset:0;background:#06120c80;z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);z-index:41;display:flex;flex-direction:column;box-shadow:-10px 0 40px #0005;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer .dh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);gap:10px}
+.drawer .db{overflow:auto;padding:18px;display:flex;flex-direction:column;gap:16px}
+.drawer .big{width:100%;max-width:100%;border-radius:10px;cursor:zoom-in;display:block}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:0;font-size:.92rem}
+.dl dt{color:var(--muted);font-size:.82rem}
+.dl dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.bignum{font-family:var(--f-mono);font-size:1.5rem;font-weight:700;line-height:1;margin-right:4px}
+.alog{margin:6px 0 0;padding-left:0;list-style:none;font-weight:400;font-size:.84rem;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.iconbtn{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.viewer{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));z-index:50;cursor:zoom-out}
+.viewer img{max-width:100%;max-height:100%;border-radius:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:11px 18px;border-radius:10px;font-size:.9rem;z-index:60;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+/* Acceso */
+.login{position:fixed;inset:0;z-index:80;background:linear-gradient(150deg,var(--g1),var(--g2) 65%,#2aa16b);display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+.login form{background:var(--panel);color:var(--ink);border-radius:16px;padding:26px 22px;width:min(380px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px #0005}
+.login h2{font-size:1.5rem}
+.login p{margin:0;color:var(--muted);font-size:.9rem}
+.logout{font:inherit;font-size:.8rem;background:#ffffff1c;color:var(--band-ink);border:1px solid #ffffff33;border-radius:999px;padding:4px 12px;cursor:pointer;align-self:flex-start}
+.logout:hover{background:#ffffff33}
+.sync{font-size:.78rem;color:var(--band-muted);display:inline-flex;align-items:center;gap:6px}
+/* Exportar */
+.exp{position:relative}
+.expmenu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px #0d2a1a30;padding:6px;min-width:240px;display:flex;flex-direction:column}
+.expmenu button{font:inherit;text-align:left;border:0;background:transparent;color:var(--ink);padding:9px 10px;border-radius:7px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.expmenu button:hover{background:var(--accent-soft)}
+.expmenu small{color:var(--muted)}
+
+@media (prefers-reduced-motion:no-preference){
+  .notice,.drawer{animation:slide .22s ease-out}
+  @keyframes slide{from{transform:translateX(16px);opacity:.3}}
+  .truck{animation:drive 4s ease-in-out infinite}
+  @keyframes drive{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-text">
+        <span class="eyebrow">Almacén · Kimitec · Vícar</span>
+        <h1>Registro de Paquetería</h1>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="testpill"><span class="dot" style="background:var(--g3);box-shadow:0 0 0 3px #7fd3a240"></span>Avisos a <b id="toHead">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b></span><button class="logout" id="logout" type="button" hidden>Cerrar sesión</button></div>
+        <span class="sync" id="sync"></span>
+      </div>
+      <svg class="hero-art" viewBox="0 0 300 130" aria-hidden="true">
+        <rect x="0" y="118" width="300" height="3" rx="1.5" fill="#ffffff40"/>
+        <g class="truck">
+          <rect x="150" y="40" width="110" height="66" rx="6" fill="#ffffff"/>
+          <rect x="150" y="40" width="110" height="14" rx="6" fill="#7fd3a2"/>
+          <path d="M260 60h22l14 22v24h-36z" fill="#e8f6ee"/>
+          <rect x="266" y="66" width="16" height="14" rx="2" fill="#1f8a5b"/>
+          <circle cx="178" cy="110" r="10" fill="#132119"/><circle cx="178" cy="110" r="4" fill="#bfe6cf"/>
+          <circle cx="270" cy="110" r="10" fill="#132119"/><circle cx="270" cy="110" r="4" fill="#bfe6cf"/>
+          <text x="205" y="86" text-anchor="middle" font-family="Archivo Narrow, Arial" font-weight="700" font-size="16" fill="#0f5a3a">KIMITEC</text>
+        </g>
+        <g>
+          <rect x="18" y="72" width="44" height="46" rx="3" fill="#e9b572"/><rect x="36" y="72" width="8" height="46" fill="#d49a4f"/>
+          <rect x="66" y="84" width="34" height="34" rx="3" fill="#f2c98d"/><rect x="79" y="84" width="8" height="34" fill="#dcae6a"/>
+          <rect x="30" y="38" width="38" height="34" rx="3" fill="#f2c98d"/><rect x="45" y="38" width="8" height="34" fill="#dcae6a"/>
+          <rect x="104" y="96" width="28" height="22" rx="3" fill="#e9b572"/>
+          <path d="M112 30l10 -10 10 10" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M122 20v26" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="kpis">
+      <button class="kpi" data-f="hoy" aria-pressed="false"><span class="ic ic-g"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tx"><span class="n" id="kHoy">0</span><span class="l">Recibidos hoy</span></span></button>
+      <button class="kpi" data-f="aviso" aria-pressed="false"><span class="ic ic-a"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span class="tx"><span class="n" id="kAviso">0</span><span class="l">Sin avisar</span></span></button>
+      <button class="kpi" data-f="recoger" aria-pressed="false"><span class="ic ic-s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12"/><path d="M8 21v-7h8v7"/></svg></span><span class="tx"><span class="n" id="kRecoger">0</span><span class="l">En almacén</span></span></button>
+      <button class="kpi" data-f="inc" aria-pressed="false"><span class="ic ic-c"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg></span><span class="tx"><span class="n" id="kInc">0</span><span class="l">Con incidencia</span></span></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <form class="card" id="f" novalidate autocomplete="off">
+      <div class="fhead"><h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nueva recepción</h2><span class="ref" id="nextRef">PQ-—</span></div>
+
+      <div class="field">
+        <label class="lbl" for="proveedor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg>Proveedor</label>
+        <div class="combo" data-field="proveedor"><input class="inp" id="proveedor" placeholder="Escribe o elige de la lista"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="lbl" for="transportista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l4 4v4h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Transportista</label>
+          <div class="combo" data-field="transportista"><input class="inp" id="transportista" placeholder="Agencia"></div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="pedido"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10v18l-5-3-5 3z"/></svg>Nº pedido <span class="opt">(si aplica)</span></label>
+          <div class="combo" data-field="pedido"><input class="inp" id="pedido" placeholder="4500…"></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="lbl" for="bultos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="8" height="8"/><rect x="13" y="11" width="8" height="8"/><rect x="8" y="3" width="8" height="8"/></svg>Bultos</label>
+          <div class="stepper"><button type="button" id="bMenos" aria-label="Un bulto menos">−</button><input id="bultos" type="number" min="1" step="1" inputmode="numeric" value="1"><button type="button" id="bMas" aria-label="Un bulto más">+</button></div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="destinatario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Destinatario</label>
+          <div class="combo" data-field="destinatario"><input class="inp" id="destinatario" placeholder="Persona o dpto."></div>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl" id="lblEstado">Estado a la llegada</span>
+        <div class="states" role="radiogroup" aria-labelledby="lblEstado">
+          <input type="radio" name="estado" id="e1" value="Correcto" checked><label for="e1" data-e="Correcto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Correcto</label>
+          <input type="radio" name="estado" id="e2" value="Dañado"><label for="e2" data-e="Dañado"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M10 7l3 4-3 3 3 4"/></svg>Dañado</label>
+          <input type="radio" name="estado" id="e3" value="Incompleto"><label for="e3" data-e="Incompleto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8" stroke-dasharray="2 2"/></svg>Incompleto</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="obs">Observaciones <span class="opt">(opcional)</span></label>
+        <div class="combo" data-field="obs"><input class="inp" id="obs" placeholder="Caja abierta, debe recogerlo…"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Foto del paquete o albarán</span>
+        <label class="drop" id="drop" for="foto">
+          <span class="pic" id="picBox"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          <span class="ph" id="fotoTxt"><strong>Hacer foto o elegir imagen</strong>En el móvil abre la cámara. En el ordenador también puedes arrastrarla aquí.</span>
+        </label>
+        <input type="file" id="foto" accept="image/*" capture="environment" hidden>
+      </div>
+      <div class="field">
+        <label class="lbl" for="operario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Registrado por</label>
+        <div class="combo" data-field="operario"><input class="inp" id="operario" placeholder="Tu nombre"></div>
+      </div>
+      <div class="formmsg" id="msg" role="alert"></div>
+      <button class="btn primary big" type="submit" id="save"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>Registrar y preparar aviso</button>
+      <div class="to">El aviso se abre en tu Outlook para <b id="toForm">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b>; solo tienes que pulsar Enviar.</div>
+    </form>
+    <div id="noticeSlot"></div>
+  </div>
+
+  <section class="log">
+    <div class="charts">
+      <div class="card chart">
+        <h3>Llegadas por día <span>últimos 14 días</span></h3>
+        <svg class="bars" id="chartDays" viewBox="0 0 560 150" role="img" aria-label="Paquetes recibidos por día"></svg>
+      </div>
+      <div class="card chart">
+        <h3>Proveedores con más envíos <span id="topSpan">total</span></h3>
+        <div class="top" id="topProv"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input class="inp" type="search" id="q" placeholder="Buscar proveedor, pedido, destinatario…" aria-label="Buscar"></div>
+      <div class="views" role="group" aria-label="Vista">
+        <button data-v="lista" aria-pressed="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.5M3 12h.5M3 18h.5"/></svg>Lista</button>
+        <button data-v="galeria" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Fotos</button>
+      </div>
+      <div class="exp">
+        <button class="btn" id="expBtn" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Exportar</button>
+        <div class="expmenu" id="expMenu" hidden>
+          <button data-x="xlsx">Excel (.xlsx)<small>Todos los registros, con enlace a la foto</small></button>
+          <button data-x="csv">CSV (.csv)<small>Para importar en SAP u otras herramientas</small></button>
+          <button data-x="xlsx-f">Excel solo con lo filtrado<small id="expFiltLbl">Lo que ves ahora en pantalla</small></button>
+        </div>
+      </div>
+    </div>
+    <div class="chips" role="group" aria-label="Filtrar">
+      <button class="chip" data-f="todos" aria-pressed="true">Todos<span class="c" id="cTodos">0</span></button>
+      <button class="chip" data-f="aviso" aria-pressed="false"><span class="sw" style="background:var(--amber)"></span>Sin avisar<span class="c" id="cAviso">0</span></button>
+      <button class="chip" data-f="recoger" aria-pressed="false"><span class="sw" style="background:var(--sky)"></span>En almacén<span class="c" id="cRecoger">0</span></button>
+      <button class="chip" data-f="inc" aria-pressed="false"><span class="sw" style="background:var(--coral)"></span>Incidencias<span class="c" id="cInc">0</span></button>
+      <button class="chip" data-f="hoy" aria-pressed="false"><span class="sw" style="background:var(--accent)"></span>Hoy<span class="c" id="cHoy">0</span></button>
+    </div>
+    <div id="list"><div class="card empty"><strong>Cargando registro…</strong><span>Conectando con el registro compartido del almacén.</span></div></div>
+  </section>
+</main>
+
+<div class="login" id="login" hidden>
+  <form id="loginForm" novalidate>
+    <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1f8a5b"/><path d="M32 12l20 11v18L32 52 12 41V23z" fill="#f2c98d"/><path d="M12 23l20 11 20-11M32 34v18" stroke="#0f5a3a" stroke-width="3" fill="none"/></svg>
+    <h2>Registro de Paquetería</h2>
+    <p>Almacén · Kimitec. Introduce la contraseña del almacén. Solo se pide la primera vez en este dispositivo.</p>
+    <div class="field"><label class="lbl" for="pw">Contraseña del almacén</label><input class="inp" id="pw" type="password" autocomplete="current-password" required></div>
+    <div class="formmsg" id="loginMsg" role="alert"></div>
+    <button class="btn primary big" type="submit" id="loginBtn">Entrar</button>
+  </form>
+</div>
+
+<script>
+/* ===== Configuración ===== */
+const SUPABASE_URL = "https://rvjmvhgktfaaprpsivvf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Ul9AtGOFZJZgCMAYa5uY1Q_0D7ErjSW";
+const LOGIN_EMAIL  = "almacen@kimitec.com";
+const BUCKET = "fotos";
+
+const DESTINATARIOS = ["almacen@kimitec.com", "antonio.santiago@kimitec.com"];
+const COMPRAS = DESTINATARIOS.join(";"); // el remitente es la cuenta que cada uno tenga abierta en Outlook
+const DEFAULTS = {
+  transportista: ["SEUR","MRW","DHL","GLS","Correos Express","Nacex","TNT / FedEx","UPS","DB Schenker","Transporte propio del proveedor"],
+  destinatario: ["Compras","Almacén","Calidad","Laboratorio","Mantenimiento","Producción"],
+  proveedor: [], pedido: [], obs: [], operario: []
+};
+const $ = s => document.querySelector(s);
+let sb = null, ready = false;
+let rows = [], filtro = "todos", vista = "lista", fotoBlob = null, fotoUrls = {};
+try { vista = localStorage.getItem("pq_vista") || "lista"; } catch {}
+
+const pad = n => String(n).padStart(2,"0");
+const dayKey = d => d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const fmt = iso => { if (!iso) return ""; const d = new Date(iso); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes()); };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const el=document.createElement("div"); el.className="toast"; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),3400); }
+const fotoSrc = r => fotoUrls[r.fotoPath] || "";
+const isInc = r => r.estado && r.estado !== "Correcto";
+const esHoy = r => dayKey(new Date(r.fecha)) === dayKey(new Date());
+
+/* Colores de transportista (monograma) */
+const PALETA = ["#1f8a5b","#1b7fc4","#e38b00","#8a4fbf","#e2483d","#0e8f8f","#c2410c","#4f46e5","#b45309","#be185d"];
+function monoColor(s){ let h=0; for (const ch of norm(s)) h=(h*31+ch.charCodeAt(0))>>>0; return PALETA[h%PALETA.length]; }
+const initials = s => String(s||"?").replace(/[^A-Za-zÀ-ÿ0-9 ]/g," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase() || "?";
+const BOX_SVG = c => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`;
+
+function nextRef(){
+  const k = dayKey(new Date());
+  const n = rows.filter(r => (r.ref||"").startsWith("PQ-"+k)).length + 1;
+  return "PQ-"+k+"-"+String(n).padStart(3,"0");
+}
+
+/* ---------- desplegables con texto libre ---------- */
+function opciones(field){
+  const cnt = new Map();
+  rows.forEach(r => { const v = String(r[field] ?? "").trim(); if (!v) return; const k = norm(v); const e = cnt.get(k) || {v, n:0}; e.n++; cnt.set(k, e); });
+  DEFAULTS[field].forEach(v => { const k = norm(v); if (!cnt.has(k)) cnt.set(k, {v, n:0}); });
+  return [...cnt.values()].sort((a,b) => b.n - a.n || a.v.localeCompare(b.v, "es"));
+}
+function setupCombo(box){
+  const field = box.dataset.field, input = box.querySelector("input");
+  const tg = document.createElement("button"); tg.type="button"; tg.className="tg"; tg.tabIndex=-1; tg.setAttribute("aria-label","Ver opciones");
+  tg.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>`;
+  box.appendChild(tg);
+  const ul = document.createElement("ul"); ul.className="menu"; ul.setAttribute("role","listbox"); ul.id = "lb-"+field; ul.hidden = true; box.appendChild(ul);
+  input.setAttribute("role","combobox"); input.setAttribute("aria-autocomplete","list"); input.setAttribute("aria-controls", ul.id); input.setAttribute("aria-expanded","false");
+  let items = [], idx = -1, showAll = false;
+  function build(){
+    const q = norm(input.value);
+    let ops = opciones(field);
+    if (q && !showAll) ops = ops.filter(o => norm(o.v).includes(q));
+    items = ops.slice(0, 50);
+    const exacto = ops.some(o => norm(o.v) === q);
+    let html = items.map((o,i) => {
+      let label = esc(o.v);
+      if (q && !showAll){ const p = norm(o.v).indexOf(q); if (p >= 0) label = esc(o.v.slice(0,p)) + "<mark>" + esc(o.v.slice(p,p+q.length)) + "</mark>" + esc(o.v.slice(p+q.length)); }
+      return `<li role="option" data-i="${i}" aria-selected="${i===idx}">${label}${o.n ? `<span class="k">${o.n}×</span>` : ""}</li>`;
+    }).join("");
+    if (q && !exacto) html += `<li class="new" data-new="1">Usar «${esc(input.value.trim())}» (nuevo)</li>`;
+    if (!html) html = `<li class="none">Aún no hay valores guardados. Escribe uno nuevo.</li>`;
+    ul.innerHTML = html;
+  }
+  function open(all){ showAll = !!all; idx = -1; build(); ul.hidden = false; box.dataset.open = ""; input.setAttribute("aria-expanded","true"); }
+  function close(){ ul.hidden = true; delete box.dataset.open; input.setAttribute("aria-expanded","false"); }
+  function pick(i){ if (items[i]) input.value = items[i].v; close(); }
+  input.addEventListener("focus", () => open(true));
+  input.addEventListener("input", () => open(false));
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown"){ e.preventDefault(); if (ul.hidden) open(true); idx = Math.min(idx+1, items.length-1); build(); }
+    else if (e.key === "ArrowUp"){ e.preventDefault(); idx = Math.max(idx-1, 0); build(); }
+    else if (e.key === "Enter" && !ul.hidden && idx >= 0){ e.preventDefault(); pick(idx); }
+    else if (e.key === "Escape" || e.key === "Tab"){ close(); }
+  });
+  tg.addEventListener("mousedown", e => e.preventDefault());
+  tg.addEventListener("click", () => { if (ul.hidden){ input.focus(); open(true); } else close(); });
+  ul.addEventListener("mousedown", e => e.preventDefault());
+  ul.addEventListener("click", e => { const li = e.target.closest("li"); if (!li) return; if (li.dataset.new) close(); else if (li.dataset.i) pick(+li.dataset.i); });
+  input.addEventListener("blur", () => setTimeout(close, 120));
+}
+document.querySelectorAll(".combo").forEach(setupCombo);
+
+/* ---------- bultos ---------- */
+$("#bMenos").onclick = () => { const i = $("#bultos"); i.value = Math.max(1, (parseInt(i.value,10)||1) - 1); };
+$("#bMas").onclick = () => { const i = $("#bultos"); i.value = (parseInt(i.value,10)||0) + 1; };
+
+/* ---------- avisos y días ---------- */
+const nAvisos = r => Number.isFinite(r.avisos) ? r.avisos : (r.avisado ? 1 : 0);
+const logAvisos = r => Array.isArray(r.avisosLog) && r.avisosLog.length ? r.avisosLog : (r.avisadoEn ? [r.avisadoEn] : []);
+function diasEntre(a, b){ const d1 = new Date(a), d2 = b ? new Date(b) : new Date(); d1.setHours(0,0,0,0); d2.setHours(0,0,0,0); return Math.max(0, Math.round((d2 - d1) / 86400000)); }
+const diasTxt = n => n === 0 ? "el mismo día" : n === 1 ? "1 día" : n + " días";
+const dias = r => diasEntre(r.fecha, r.recogido ? r.recogidoEn : null);
+const ordinal = n => n + "º";
+
+/* ---------- correo ---------- */
+function mail(r){
+  const n = nAvisos(r), recordatorio = n >= 1 && !r.recogido;
+  const subject = (recordatorio ? "RECORDATORIO (" + ordinal(n+1) + " aviso) · " : "") + "Llegada de paquetería · " + r.proveedor + (r.pedido ? " · Pedido " + r.pedido : "") + (r.estado !== "Correcto" ? " · " + String(r.estado).toUpperCase() : "");
+  const lines = recordatorio
+    ? ["Hola,", "", "Te recordamos que sigue en el almacén, pendiente de recoger, esta mercancía. Lleva " + diasTxt(dias(r)).replace("el mismo día","menos de un día") + " en el almacén y es el " + ordinal(n+1) + " aviso (primero el " + fmt(logAvisos(r)[0]) + ").", ""]
+    : ["Hola,", "", "Ha llegado al almacén la siguiente mercancía:", ""];
+  lines.push(
+    "Referencia: " + r.ref, "Fecha y hora: " + fmt(r.fecha), "Proveedor: " + r.proveedor, "Transportista: " + r.transportista,
+    "Nº pedido: " + (r.pedido || "No aplica"), "Bultos: " + r.bultos, "Estado: " + r.estado);
+  if (r.obs) lines.push("Observaciones: " + r.obs);
+  lines.push("Destinatario: " + r.destinatario, "", r.fotoPath ? "La foto está disponible en el Registro de Paquetería del almacén." : "Sin foto adjunta.",
+    "Queda en el almacén pendiente de recogida.", "", "Un saludo,", "Almacén · Kimitec");
+  const body = lines.join("\n");
+  const q = "to="+encodeURIComponent(COMPRAS)+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  return { subject, body, web: "https://outlook.office.com/mail/deeplink/compose?" + q, web365: "https://outlook.office365.com/mail/deeplink/compose?" + q,
+    app: "mailto:" + DESTINATARIOS.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
+}
+async function marcarAvisado(id){
+  const r = rows.find(x => x.id === id); if (!r || !ready) return false;
+  const log = logAvisos(r), last = log[log.length-1];
+  if (last && Date.now() - new Date(last).getTime() < 10*60*1000) return false; // mismo aviso: no se cuenta dos veces en 10 minutos
+  const now = new Date().toISOString();
+  try { const { error } = await sb.from("paquetes").update({ avisos: nAvisos(r) + 1, avisos_log: [...log, now] }).eq("id", id); if (error) throw error; await cargar(); return true; }
+  catch(e){ toast("No se pudo marcar como avisado: " + (e.message||e.code)); return false; }
+}
+async function marcarRecogido(id, val){
+  try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null }).eq("id", id); if (error) throw error; await cargar(); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
+  catch(e){ toast("No se pudo guardar: " + (e.message||e.code)); }
+}
+function noticeHTML(r){
+  const m = mail(r);
+  return { m, html: `<div class="acts">
+      <a class="btn primary" target="_blank" rel="noopener" href="${esc(m.web)}" data-mark><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Abrir en Outlook web</a></div>
+    <div class="cp"><p style="margin:0;font-size:.85rem"><b>Si no se abre ningún correo:</b> abre Outlook, crea un correo nuevo y pega estos tres datos.</p>
+      <div class="cprow"><span class="cpl">Para</span><code class="cpv" data-v="to"></code><button class="btn small" type="button" data-cp="to">Copiar</button></div>
+      <div class="cprow"><span class="cpl">Asunto</span><code class="cpv" data-v="subject"></code><button class="btn small" type="button" data-cp="subject">Copiar</button></div>
+      <div class="cprow"><span class="cpl">Mensaje</span><code class="cpv mailprev" data-v="body"></code><button class="btn small" type="button" data-cp="body">Copiar</button></div>
+    </div>
+    <div><button class="btn small" type="button" data-done>Ya lo he enviado: marcar como avisado</button></div>` };
+}
+function wireNotice(box, r, m){
+  const vals = { to: DESTINATARIOS.join("; "), subject: m.subject, body: m.body };
+  box.querySelectorAll("[data-v]").forEach(el => el.textContent = vals[el.dataset.v]);
+  box.querySelectorAll("[data-mark]").forEach(a => a.addEventListener("click", () => setTimeout(() => marcarAvisado(r.id), 2500)));
+  box.querySelectorAll("[data-cp]").forEach(b => b.addEventListener("click", async () => {
+    const k = b.dataset.cp;
+    try { await navigator.clipboard.writeText(vals[k]); b.textContent = "Copiado ✓"; setTimeout(() => b.textContent = "Copiar", 1800); }
+    catch { const s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(box.querySelector('[data-v="'+k+'"]')); s.removeAllRanges(); s.addRange(rg); toast("Texto seleccionado: pulsa Ctrl+C (o mantén pulsado en el móvil)"); }
+  }));
+  box.querySelector("[data-done]").addEventListener("click", async () => { const ok = await marcarAvisado(r.id); toast(ok ? "Aviso contado (" + (nAvisos(r)+1) + "º)" : "Este aviso ya estaba contado"); });
+}
+function showNotice(r){
+  const slot = $("#noticeSlot"); slot.innerHTML = "";
+  const {m, html} = noticeHTML(r);
+  const box = document.createElement("div"); box.className = "notice";
+  box.innerHTML = `<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Registrado · ${esc(r.ref)}</h3>
+    <p>Abre el correo, revísalo y pulsa <b>Enviar</b> en Outlook. Si no se abre, copia el texto y pégalo en un correo nuevo.</p>${html}
+    <div><button class="btn small" type="button" data-close>Cerrar</button></div>`;
+  wireNotice(box, r, m);
+  box.querySelector("[data-close]").onclick = () => slot.innerHTML = "";
+  slot.appendChild(box);
+  box.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+/* ---------- foto ---------- */
+async function setFoto(f){
+  if (!f || !/^image\//.test(f.type)) { toast("Elige un archivo de imagen"); return; }
+  try { fotoBlob = await shrink(f); } catch { fotoBlob = f; }
+  $("#picBox").outerHTML = `<img class="pic" id="picBox" src="${URL.createObjectURL(fotoBlob)}" alt="Vista previa">`;
+  $("#fotoTxt").innerHTML = `<strong>Foto lista</strong>Pulsa para cambiarla.`;
+}
+$("#foto").addEventListener("change", e => setFoto(e.target.files[0]));
+const drop = $("#drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => setFoto(e.dataTransfer.files[0]));
+function shrink(file){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); c.toBlob(b => b ? res(b) : rej(), "image/jpeg", 0.82); };
+    img.onerror = rej; img.src = URL.createObjectURL(file);
+  });
+}
+function resetFoto(){
+  fotoBlob = null; $("#foto").value = "";
+  $("#picBox").outerHTML = `<span class="pic" id="picBox"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/></svg></span>`;
+  $("#fotoTxt").innerHTML = `<strong>Hacer foto o elegir imagen</strong>En el móvil abre la cámara. En el ordenador también puedes arrastrarla aquí.`;
+}
+
+/* ---------- guardar ---------- */
+$("#f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = id => $("#"+id).value.trim();
+  const falta = [["proveedor","el proveedor"],["transportista","el transportista"],["destinatario","el destinatario"]].filter(([id]) => !v(id)).map(x=>x[1]);
+  const bultos = parseInt($("#bultos").value, 10);
+  if (!(bultos >= 1)) falta.push("el número de bultos");
+  if (falta.length){ $("#msg").textContent = "Falta " + falta.join(", ") + "."; return; }
+  if (!ready){ $("#msg").textContent = "Sin conexión con el registro. Comprueba la cobertura y vuelve a intentarlo."; return; }
+  try { localStorage.setItem("pq_operario", v("operario")); } catch {}
+  $("#msg").textContent = ""; const btn = $("#save"); btn.disabled = true; btn.lastChild.textContent = "Guardando…";
+  try {
+    let foto_path = null;
+    if (fotoBlob){
+      const d = new Date(), path = d.getFullYear() + "/" + pad(d.getMonth()+1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2)) + ".jpg";
+      const { error } = await sb.storage.from(BUCKET).upload(path, fotoBlob, { contentType: "image/jpeg" });
+      if (error) toast("La foto no se pudo subir (" + error.message + "); se guarda sin foto."); else foto_path = path;
+    }
+    const nuevo = { ref: nextRef(), fecha: new Date().toISOString(), proveedor: v("proveedor"), transportista: v("transportista"),
+      pedido: v("pedido") || null, bultos, estado: document.querySelector("input[name=estado]:checked").value, obs: v("obs") || null,
+      destinatario: v("destinatario"), operario: v("operario") || null, foto_path };
+    const { data, error } = await sb.from("paquetes").insert(nuevo).select().single();
+    if (error) throw error;
+    const r = desdeBD(data);
+    if (fotoBlob && foto_path) fotoUrls[foto_path] = URL.createObjectURL(fotoBlob);
+    $("#f").reset(); $("#bultos").value = 1; resetFoto(); $("#operario").value = v_operario();
+    await cargar();
+    showNotice(r);
+  } catch(err){ $("#msg").textContent = "No se pudo registrar: " + (err.message || err.code || "error") + ". Inténtalo de nuevo."; }
+  finally { btn.disabled = false; btn.lastChild.textContent = "Registrar y preparar aviso"; }
+});
+
+/* ---------- gráficos ---------- */
+function renderCharts(){
+  const svg = $("#chartDays"), W = 560, H = 150, padL = 6, padB = 22, padT = 16, n = 14;
+  const days = []; const now = new Date();
+  for (let i = n-1; i >= 0; i--){ const d = new Date(now); d.setDate(now.getDate()-i); days.push({k: dayKey(d), d}); }
+  const counts = days.map(x => rows.filter(r => dayKey(new Date(r.fecha)) === x.k).length);
+  const max = Math.max(1, ...counts), slot = (W - padL*2) / n, bw = slot * 0.62, ch = H - padB - padT;
+  const DOW = ["D","L","M","X","J","V","S"];
+  svg.innerHTML = `<line x1="0" x2="${W}" y1="${H-padB}" y2="${H-padB}" stroke="var(--line)"/>` + days.map((x,i) => {
+    const h = counts[i] ? Math.max(4, counts[i]/max*ch) : 2, xx = padL + i*slot + (slot-bw)/2, y = H - padB - h;
+    return `<g><title>${pad(x.d.getDate())}/${pad(x.d.getMonth()+1)}: ${counts[i]} paquete(s)</title>
+      <rect class="b${i===n-1?" today":""}" x="${xx.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" ${counts[i]?"":'style="fill:var(--line)"'}/>
+      ${counts[i] ? `<text class="v" x="${(xx+bw/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle">${counts[i]}</text>` : ""}
+      <text x="${(xx+bw/2).toFixed(1)}" y="${H-7}" text-anchor="middle">${DOW[x.d.getDay()]}${x.d.getDate()}</text></g>`;
+  }).join("");
+  const top = opciones("proveedor").filter(o => o.n).slice(0,5);
+  const tmax = Math.max(1, ...top.map(o=>o.n));
+  $("#topProv").innerHTML = top.length ? top.map(o => `<div class="tr"><span>${esc(o.v)}</span><b>${o.n}</b><div class="bar"><i style="width:${(o.n/tmax*100).toFixed(0)}%;background:${monoColor(o.v)}"></i></div></div>`).join("")
+    : `<span class="muted" style="font-size:.86rem">Aparecerán cuando registres envíos.</span>`;
+}
+
+/* ---------- registro ---------- */
+function filtrados(){
+  const q = norm($("#q").value);
+  let list = rows.filter(r => filtro === "todos" || (filtro==="aviso" && !r.avisado) || (filtro==="recoger" && !r.recogido) || (filtro==="inc" && isInc(r)) || (filtro==="hoy" && esHoy(r)));
+  if (q) list = list.filter(r => norm([r.ref,r.proveedor,r.transportista,r.pedido,r.destinatario,r.obs].join(" ")).includes(q));
+  return list;
+}
+const thumbHTML = (r, cls) => r.fotoPath && fotoSrc(r) ? `<img class="${cls}" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" loading="lazy">`
+  : `<span class="noimg ${cls==="img"?"":""}" style="background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</span>`;
+const estPill = r => `<span class="pill ${r.estado==="Correcto"?"p-ok":r.estado==="Dañado"?"p-bad":"p-warn"}">${esc(r.estado)}</span>`;
+const pills = r => { const n = nAvisos(r), d = dias(r);
+  return estPill(r) + `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`
+    + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Recogido en " + diasTxt(d) : "En almacén · " + (d ? diasTxt(d) : "hoy")}</span>`; };
+const carrier = t => `<span class="carrier"><span class="mono" style="background:${monoColor(t)}">${esc(initials(t))}</span>${esc(t)}</span>`;
+
+function render(){
+  const c = { todos: rows.length, aviso: rows.filter(r=>!r.avisado).length, recoger: rows.filter(r=>!r.recogido).length, inc: rows.filter(isInc).length, hoy: rows.filter(esHoy).length };
+  $("#kHoy").textContent = c.hoy; $("#kAviso").textContent = c.aviso; $("#kRecoger").textContent = c.recoger; $("#kInc").textContent = rows.filter(r => isInc(r) && !r.recogido).length;
+  for (const k of ["Todos","Aviso","Recoger","Inc","Hoy"]) $("#c"+k).textContent = c[k.toLowerCase()];
+  $("#nextRef").textContent = nextRef();
+  document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === filtro && (b.classList.contains("chip") || filtro !== "todos"))));
+  document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === vista)));
+  renderCharts();
+  const list = filtrados(), el = $("#list");
+  $("#expFiltLbl").textContent = list.length + " de " + rows.length + " registros con el filtro actual";
+  if (!rows.length){ el.innerHTML = `<div class="card empty">${BOX_SVG("var(--accent)")}<strong>Aún no hay paquetes registrados</strong><span>Rellena «Nueva recepción» cuando llegue un envío. Aparecerá aquí con su foto, su estado y el aviso.</span></div>`; return; }
+  if (!list.length){ el.innerHTML = `<div class="card empty"><strong>Nada con este filtro</strong><span>Prueba con «Todos» o cambia la búsqueda.</span></div>`; return; }
+  if (vista === "galeria"){
+    el.innerHTML = `<div class="gallery">` + list.map(r => `<button class="card tile" data-open="${esc(r.id)}">${thumbHTML(r,"img")}
+      <span class="tb st-${esc(r.estado)}"><span class="tp">${esc(r.proveedor)}</span><span class="ts">${fmt(r.fecha)} · ${esc(r.bultos)} bulto${r.bultos==1?"":"s"}</span><span class="pills">${pills(r)}</span></span></button>`).join("") + `</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="card list">` + list.map(r => `<article class="entry" data-open="${esc(r.id)}">
+      <span class="stripe st-${esc(r.estado)}"></span>${thumbHTML(r,"thumb")}
+      <div class="einfo">
+        <div class="etop"><span class="eprov">${esc(r.proveedor)}</span><span class="ecode">${esc(r.ref)} · ${fmt(r.fecha)}</span></div>
+        <div class="emeta">${carrier(r.transportista)}<span><b>${esc(r.bultos)}</b> bulto${r.bultos==1?"":"s"}</span><span>Pedido ${r.pedido ? "<b>"+esc(r.pedido)+"</b>" : "no aplica"}</span><span>Para <b>${esc(r.destinatario)}</b></span></div>
+        <div class="pills">${pills(r)}</div>
+      </div>
+      <div class="eacts">
+        <button class="btn small" data-aviso="${esc(r.id)}">${nAvisos(r) && !r.recogido ? "Recordar" : nAvisos(r) ? "Reenviar" : "Avisar"}</button>
+        <button class="btn small" data-rec="${esc(r.id)}">${r.recogido ? "Deshacer" : "Recogido"}</button>
+      </div></article>`).join("") + `</div>`;
+}
+$("#list").addEventListener("click", e => {
+  const a = e.target.closest("[data-aviso]"); if (a){ e.stopPropagation(); openDrawer(a.dataset.aviso, true); return; }
+  const k = e.target.closest("[data-rec]"); if (k){ e.stopPropagation(); const r = rows.find(x=>x.id===k.dataset.rec); if (r) marcarRecogido(r.id, !r.recogido); return; }
+  const o = e.target.closest("[data-open]"); if (o) openDrawer(o.dataset.open);
+});
+
+/* ---------- ficha de detalle ---------- */
+let drawerId = null;
+function openDrawer(id, irAviso){
+  const r = rows.find(x => x.id === id); if (!r) return; drawerId = id;
+  closeDrawer(true);
+  const scrim = document.createElement("div"); scrim.className = "scrim"; scrim.onclick = () => closeDrawer();
+  const d = document.createElement("aside"); d.className = "drawer"; d.setAttribute("role","dialog"); d.setAttribute("aria-label","Detalle " + r.ref);
+  const who = r.operario || "—";
+  const {m, html} = noticeHTML(r);
+  d.innerHTML = `<div class="dh"><div><div class="ecode">${esc(r.ref)}</div><h2>${esc(r.proveedor)}</h2></div><button class="iconbtn" aria-label="Cerrar" data-x><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="db">
+      ${r.fotoPath && fotoSrc(r) ? `<img class="big" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" data-zoom>` : `<div class="noimg" style="width:100%;height:auto;aspect-ratio:16/9;background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</div>`}
+      <div class="pills">${pills(r)}</div>
+      <dl class="dl">
+        <dt>Llegada</dt><dd>${fmt(r.fecha)}</dd>
+        <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
+        <dt>Nº pedido</dt><dd>${esc(r.pedido || "No aplica")}</dd>
+        <dt>Bultos</dt><dd>${esc(r.bultos)}</dd>
+        <dt>Destinatario</dt><dd>${esc(r.destinatario)}</dd>
+        <dt>Observaciones</dt><dd>${esc(r.obs || "—")}</dd>
+        <dt>Registrado por</dt><dd>${esc(who)}</dd>
+        <dt>Avisos enviados</dt><dd><span class="bignum">${nAvisos(r)}</span>${logAvisos(r).length ? `<ol class="alog">${logAvisos(r).map((t,i) => `<li>${ordinal(i+1)} aviso · ${fmt(t)}</li>`).join("")}</ol>` : `<span class="muted"> Pendiente del primer aviso</span>`}</dd>
+        <dt>${r.recogido ? "Tardó en recogerse" : "Lleva en almacén"}</dt><dd><span class="bignum" style="color:${!r.recogido && dias(r) >= 3 ? "var(--coral)" : "var(--ink)"}">${dias(r)}</span> ${dias(r) === 1 ? "día" : "días"}${r.recogido ? " · recogido el " + fmt(r.recogidoEn) : ""}</dd>
+      </dl>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-rec2>${r.recogido ? "Volver a «en almacén»" : "Marcar como recogido"}</button></div>
+      <div class="notice" id="dAviso" style="animation:none"><h3>${nAvisos(r) && !r.recogido ? "Enviar recordatorio (" + ordinal(nAvisos(r)+1) + " aviso)" : nAvisos(r) ? "Reenviar aviso" : "Avisar"}</h3>${html}</div>
+    </div>`;
+  wireNotice(d, r, m);
+  d.querySelector("[data-x]").onclick = () => closeDrawer();
+  d.querySelector("[data-rec2]").onclick = () => { marcarRecogido(r.id, !r.recogido); closeDrawer(); };
+  d.querySelector("[data-zoom]")?.addEventListener("click", () => { const v = document.createElement("div"); v.className="viewer"; v.innerHTML = `<img src="${esc(fotoSrc(r))}" alt="Foto del paquete">`; v.onclick = () => v.remove(); document.body.appendChild(v); });
+  document.body.append(scrim, d);
+  if (irAviso){ const n = d.querySelector("#dAviso"); n.scrollIntoView({block:"start"}); n.querySelector("a.btn.primary").focus(); }
+  else d.querySelector("[data-x]").focus();
+}
+function closeDrawer(keep){ document.querySelectorAll(".scrim,.drawer").forEach(x => x.remove()); if (!keep) drawerId = null; }
+document.addEventListener("keydown", e => { if (e.key==="Escape"){ const v = document.querySelector(".viewer"); if (v) v.remove(); else closeDrawer(); $("#expMenu").hidden = true; } });
+
+/* ---------- filtros y vistas ---------- */
+document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
+  filtro = (b.classList.contains("kpi") && filtro === b.dataset.f) ? "todos" : b.dataset.f; render();
+  if (b.classList.contains("kpi")) $(".log").scrollIntoView({behavior:"smooth", block:"start"});
+}));
+document.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => { vista = b.dataset.v; try { localStorage.setItem("pq_vista", vista); } catch {} render(); }));
+$("#q").addEventListener("input", render);
+
+/* ---------- exportar ---------- */
+const COLS = ["Referencia","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
+let expUrls = {};
+function filasExport(list){
+  return list.map(r => [r.ref, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario,
+    r.operario || "", nAvisos(r), fmt(logAvisos(r)[0]), fmt(logAvisos(r).slice(-1)[0]), r.recogido ? "Sí" : "No", fmt(r.recogidoEn), dias(r),
+    r.fotoPath ? (expUrls[r.fotoPath] || "") : ""]);
+}
+function guardar(filename, data){
+  const blob = data instanceof Blob ? data : new Blob([data], { type: filename.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast("Exportado: " + filename);
+}
+async function exportar(tipo){
+  $("#expMenu").hidden = true; $("#expBtn").setAttribute("aria-expanded","false");
+  const list = tipo === "xlsx-f" ? filtrados() : rows;
+  if (!list.length){ toast("No hay registros que exportar"); return; }
+  const stamp = dayKey(new Date());
+  const paths = list.map(r => r.fotoPath).filter(Boolean);
+  expUrls = {};
+  if (paths.length){ const { data } = await sb.storage.from(BUCKET).createSignedUrls(paths, 60*60*24*30); (data || []).forEach(x => { if (x.signedUrl) expUrls[x.path] = x.signedUrl; }); }
+  const data = filasExport([...list].sort((a,b) => String(a.fecha).localeCompare(String(b.fecha))));
+  if (tipo === "csv"){
+    const cell = v => { const s = String(v ?? ""); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+    const csv = "﻿" + [COLS, ...data].map(r => r.map(cell).join(";")).join("\r\n");
+    return guardar("paqueteria_kimitec_" + stamp + ".csv", csv);
+  }
+  if (!window.XLSX){ toast("No se pudo cargar el generador de Excel; exportando en CSV."); return exportar("csv"); }
+  const ws = XLSX.utils.aoa_to_sheet([COLS, ...data]);
+  ws["!cols"] = [14,17,24,18,14,8,12,32,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
+  ws["!autofilter"] = { ref: "A1:Q" + (data.length+1) };
+  data.forEach((r,i) => { if (r[16]) { const ref = "Q" + (i+2); ws[ref].l = { Target: r[16], Tooltip: "Ver foto" }; } });
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Paquetería");
+  const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+  return guardar("paqueteria_kimitec_" + stamp + (tipo==="xlsx-f" ? "_filtrado" : "") + ".xlsx", new Uint8Array(out));
+}
+$("#expBtn").addEventListener("click", e => { e.stopPropagation(); const m = $("#expMenu"); m.hidden = !m.hidden; $("#expBtn").setAttribute("aria-expanded", String(!m.hidden)); });
+$("#expMenu").addEventListener("click", e => { const b = e.target.closest("[data-x]"); if (b) exportar(b.dataset.x); });
+document.addEventListener("click", e => { if (!e.target.closest(".exp")) $("#expMenu").hidden = true; });
+
+/* ---------- datos (Supabase) ---------- */
+const v_operario = () => { try { return localStorage.getItem("pq_operario") || ""; } catch { return ""; } };
+function desdeBD(d){
+  const log = Array.isArray(d.avisos_log) ? d.avisos_log : [];
+  return { id: d.id, ref: d.ref, fecha: d.fecha, proveedor: d.proveedor, transportista: d.transportista, pedido: d.pedido || "",
+    bultos: d.bultos, estado: d.estado, obs: d.obs || "", destinatario: d.destinatario, operario: d.operario || "", fotoPath: d.foto_path || null,
+    avisos: d.avisos || 0, avisosLog: log, avisado: (d.avisos || 0) > 0, avisadoEn: log[0] || null,
+    recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "" };
+}
+function setSync(t){ $("#sync").textContent = t; }
+async function cargar(){
+  const { data, error } = await sb.from("paquetes").select("*").order("fecha", { ascending: false }).limit(1000);
+  if (error){ setSync("Sin conexión con el registro"); if (/JWT|auth/i.test(error.message)) mostrarLogin(); return; }
+  rows = data.map(desdeBD); ready = true;
+  setSync("Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }));
+  render();
+  const faltan = [...new Set(rows.map(r => r.fotoPath).filter(p => p && !fotoUrls[p]))];
+  if (faltan.length){
+    for (let k = 0; k < faltan.length; k += 100){
+      const { data: urls } = await sb.storage.from(BUCKET).createSignedUrls(faltan.slice(k, k+100), 60*60*12);
+      (urls || []).forEach(x => { if (x.signedUrl) fotoUrls[x.path] = x.signedUrl; });
+    }
+    render();
+  }
+}
+let canal = null, tRecarga = null;
+function escuchar(){
+  if (canal) return;
+  canal = sb.channel("paquetes-cambios")
+    .on("postgres_changes", { event: "*", schema: "public", table: "paquetes" }, () => { clearTimeout(tRecarga); tRecarga = setTimeout(cargar, 400); })
+    .subscribe();
+}
+function mostrarLogin(){ $("#login").hidden = false; $("#logout").hidden = true; setTimeout(() => $("#pw").focus(), 50); }
+async function entrar(){ $("#login").hidden = true; $("#logout").hidden = false; await cargar(); escuchar(); }
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("#loginBtn"); btn.disabled = true; btn.textContent = "Entrando…"; $("#loginMsg").textContent = "";
+  const { error } = await sb.auth.signInWithPassword({ email: LOGIN_EMAIL, password: $("#pw").value });
+  btn.disabled = false; btn.textContent = "Entrar";
+  if (error){ $("#loginMsg").textContent = /invalid/i.test(error.message) ? "Contraseña incorrecta." : "No se pudo entrar: " + error.message; return; }
+  $("#pw").value = ""; entrar();
+});
+$("#logout").addEventListener("click", async () => { await sb.auth.signOut(); rows = []; ready = false; render(); mostrarLogin(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ready) cargar(); });
+
+/* ---------- arranque ---------- */
+(async () => {
+  render();
+  $("#operario").value = v_operario();
+  if (!window.supabase || !SUPABASE_URL){ $("#list").innerHTML = `<div class="card state err">Falta configurar la conexión con el registro.</div>`; return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) entrar(); else { $("#list").innerHTML = `<div class="card empty"><strong>Inicia sesión</strong><span>Introduce la contraseña del almacén para ver el registro.</span></div>`; mostrarLogin(); }
+})();
+</script>
+</body>
+</html>
