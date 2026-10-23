@@ -405,7 +405,7 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
     <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1f8a5b"/><path d="M32 12l20 11v18L32 52 12 41V23z" fill="#f2c98d"/><path d="M12 23l20 11 20-11M32 34v18" stroke="#0f5a3a" stroke-width="3" fill="none"/></svg>
     <h2>Registro de Paquetería</h2>
     <p>Almacén · Kimitec. Introduce la contraseña del almacén. Solo se pide la primera vez en este dispositivo.</p>
-    <div class="field"><label class="lbl" for="pw">Contraseña del almacén</label><input class="inp" id="pw" type="password" autocomplete="current-password" required></div>
+    <div class="field"><label class="lbl" for="pw">Contraseña del almacén</label><input class="inp" id="pw" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required></div>
     <div class="formmsg" id="loginMsg" role="alert"></div>
     <button class="btn primary big" type="submit" id="loginBtn">Entrar</button>
   </form>
@@ -426,7 +426,7 @@ const DEFAULTS = {
   proveedor: [], pedido: [], obs: [], operario: []
 };
 const $ = s => document.querySelector(s);
-let sb = null, ready = false;
+let sb = null, ready = false, lastErr = "";
 let rows = [], filtro = "todos", vista = "lista", fotoBlob = null, fotoUrls = {};
 try { vista = localStorage.getItem("pq_vista") || "lista"; } catch {}
 
@@ -613,7 +613,8 @@ $("#f").addEventListener("submit", async e => {
   const bultos = parseInt($("#bultos").value, 10);
   if (!(bultos >= 1)) falta.push("el número de bultos");
   if (falta.length){ $("#msg").textContent = "Falta " + falta.join(", ") + "."; return; }
-  if (!ready){ $("#msg").textContent = "Sin conexión con el registro. Comprueba la cobertura y vuelve a intentarlo."; return; }
+  if (!ready){ try { await cargar(); } catch(e){ lastErr = e.message; } }
+  if (!ready){ $("#msg").textContent = "No se puede conectar con el registro. Detalle: " + (lastErr || "sin sesión iniciada") + ". Pásale este mensaje a Pachi."; return; }
   try { localStorage.setItem("pq_operario", v("operario")); } catch {}
   $("#msg").textContent = ""; const btn = $("#save"); btn.disabled = true; btn.lastChild.textContent = "Guardando…";
   try {
@@ -805,9 +806,11 @@ function desdeBD(d){
 }
 function setSync(t){ $("#sync").textContent = t; }
 async function cargar(){
+  if (!sb) return false;
   const { data, error } = await sb.from("paquetes").select("*").order("fecha", { ascending: false }).limit(1000);
-  if (error){ setSync("Sin conexión con el registro"); if (/JWT|auth/i.test(error.message)) mostrarLogin(); return; }
-  rows = data.map(desdeBD); ready = true;
+  if (error){ lastErr = (error.code ? error.code + " · " : "") + error.message; setSync("Error del registro: " + lastErr); console.error(error);
+    if (/JWT|jwt|auth|401/i.test(error.message + error.code)) mostrarLogin(); return false; }
+  rows = data.map(desdeBD); ready = true; lastErr = "";
   setSync("Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }));
   render();
   const faltan = [...new Set(rows.map(r => r.fotoPath).filter(p => p && !fotoUrls[p]))];
@@ -833,7 +836,10 @@ $("#loginForm").addEventListener("submit", async e => {
   const btn = $("#loginBtn"); btn.disabled = true; btn.textContent = "Entrando…"; $("#loginMsg").textContent = "";
   const { error } = await sb.auth.signInWithPassword({ email: LOGIN_EMAIL, password: $("#pw").value });
   btn.disabled = false; btn.textContent = "Entrar";
-  if (error){ $("#loginMsg").textContent = /invalid/i.test(error.message) ? "Contraseña incorrecta." : "No se pudo entrar: " + error.message; return; }
+  if (error){ const m = error.message || "";
+    $("#loginMsg").textContent = /not confirmed/i.test(m) ? "El usuario del almacén no está confirmado en Supabase. Avisa a Pachi."
+      : /invalid/i.test(m) ? "Contraseña incorrecta (o el usuario " + LOGIN_EMAIL + " no existe en Supabase)."
+      : "No se pudo entrar: " + m; console.error(error); return; }
   $("#pw").value = ""; entrar();
 });
 $("#logout").addEventListener("click", async () => { await sb.auth.signOut(); rows = []; ready = false; render(); mostrarLogin(); });
@@ -843,7 +849,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 (async () => {
   render();
   $("#operario").value = v_operario();
-  if (!window.supabase || !SUPABASE_URL){ $("#list").innerHTML = `<div class="card state err">Falta configurar la conexión con el registro.</div>`; return; }
+  if (!window.supabase){ $("#list").innerHTML = `<div class="card state err">No se ha podido cargar el conector del registro (supabase-js). Comprueba la conexión a internet y recarga.</div>`; setSync("Error: no carga supabase-js"); return; }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
   const { data: { session } } = await sb.auth.getSession();
   if (session) entrar(); else { $("#list").innerHTML = `<div class="card empty"><strong>Inicia sesión</strong><span>Introduce la contraseña del almacén para ver el registro.</span></div>`; mostrarLogin(); }
