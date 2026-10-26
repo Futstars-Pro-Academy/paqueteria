@@ -437,7 +437,7 @@ const DEFAULTS = {
   proveedor: [], pedido: [], obs: [], operario: []
 };
 const $ = s => document.querySelector(s);
-let sb = null, ready = false, lastErr = "";
+let sb = null, ready = false, lastErr = "", mostrar = 100;
 let rows = [], filtro = "todos", vista = "lista", fotoBlob = null, fotoUrls = {};
 try { vista = localStorage.getItem("pq_vista") || "lista"; } catch {}
 
@@ -547,7 +547,7 @@ async function marcarAvisado(id){
   const log = logAvisos(r), last = log[log.length-1];
   if (last && Date.now() - new Date(last).getTime() < 10*60*1000) return false; // mismo aviso: no se cuenta dos veces en 10 minutos
   const now = new Date().toISOString();
-  try { const { error } = await sb.from("paquetes").update({ avisos: nAvisos(r) + 1, avisos_log: [...log, now] }).eq("id", id); if (error) throw error; await cargar(); return true; }
+  try { const { error } = await sb.from("paquetes").update({ avisos: nAvisos(r) + 1, avisos_log: [...log, now] }).eq("id", id); if (error) throw error; await refrescarUno(id); return true; }
   catch(e){ toast("No se pudo marcar como avisado: " + (e.message||e.code)); return false; }
 }
 async function borrar(r){
@@ -566,11 +566,11 @@ async function cambiarDestinatario(r, nuevo){
   let { error } = await sb.from("paquetes").update(cambio).eq("id", r.id);
   if (error && /destinatario_original/.test(error.message)){ delete cambio.destinatario_original; ({ error } = await sb.from("paquetes").update(cambio).eq("id", r.id)); }
   if (error){ toast("No se pudo cambiar: " + error.message); return false; }
-  await cargar(); toast("Destinatario cambiado a " + nuevo); return true;
+  await refrescarUno(r.id); toast("Destinatario cambiado a " + nuevo); return true;
 }
 async function marcarRecogido(id, val){
   const r0 = rows.find(x => x.id === id);
-  try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null, recogido_por: val && r0 ? r0.destinatario : null }).eq("id", id); if (error) throw error; await cargar(); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
+  try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null, recogido_por: val && r0 ? r0.destinatario : null }).eq("id", id); if (error) throw error; await refrescarUno(id); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
   catch(e){ toast("No se pudo guardar: " + (e.message||e.code)); }
 }
 function noticeHTML(r){
@@ -662,7 +662,7 @@ $("#f").addEventListener("submit", async e => {
     const r = desdeBD(data);
     if (fotoBlob && foto_path) fotoUrls[foto_path] = URL.createObjectURL(fotoBlob);
     $("#f").reset(); $("#bultos").value = 1; resetFoto(); $("#operario").value = v_operario();
-    await cargar();
+    await refrescarUno(r.id);
     showNotice(r);
   } catch(err){ $("#msg").textContent = "No se pudo registrar: " + (err.message || err.code || "error") + ". Inténtalo de nuevo."; }
   finally { btn.disabled = false; btn.lastChild.textContent = "Registrar y preparar aviso"; }
@@ -692,7 +692,7 @@ function renderCharts(){
 /* ---------- registro ---------- */
 function filtrados(){
   const q = norm($("#q").value);
-  let list = rows.filter(r => filtro === "todos" || (filtro==="aviso" && !r.avisado) || (filtro==="recoger" && !r.recogido) || (filtro==="inc" && isInc(r)) || (filtro==="hoy" && esHoy(r)));
+  let list = rows.filter(r => filtro === "todos" || (filtro==="aviso" && !r.avisado && !r.recogido) || (filtro==="recoger" && !r.recogido) || (filtro==="inc" && isInc(r)) || (filtro==="hoy" && esHoy(r)));
   if (q) list = list.filter(r => norm([r.ref,r.proveedor,r.transportista,r.pedido,r.destinatario,r.obs].join(" ")).includes(q));
   return list;
 }
@@ -700,25 +700,27 @@ const thumbHTML = (r, cls) => r.fotoPath && fotoSrc(r) ? `<img class="${cls}" sr
   : `<span class="noimg ${cls==="img"?"":""}" style="background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</span>`;
 const estPill = r => `<span class="pill ${r.estado==="Correcto"?"p-ok":r.estado==="Dañado"?"p-bad":"p-warn"}">${esc(r.estado)}</span>`;
 const pills = r => { const n = nAvisos(r), d = dias(r);
-  return estPill(r) + `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`
+  return estPill(r) + (!n && r.recogido ? "" : `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`)
     + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Recogido en " + diasTxt(d) : "En almacén · " + (d ? diasTxt(d) : "hoy")}</span>`; };
 const carrier = t => `<span class="carrier"><span class="mono" style="background:${monoColor(t)}">${esc(initials(t))}</span>${esc(t)}</span>`;
 
 function render(){
-  const c = { todos: rows.length, aviso: rows.filter(r=>!r.avisado).length, recoger: rows.filter(r=>!r.recogido).length, inc: rows.filter(isInc).length, hoy: rows.filter(esHoy).length };
+  const c = { todos: rows.length, aviso: rows.filter(r=>!r.avisado && !r.recogido).length, recoger: rows.filter(r=>!r.recogido).length, inc: rows.filter(isInc).length, hoy: rows.filter(esHoy).length };
   $("#kHoy").textContent = c.hoy; $("#kAviso").textContent = c.aviso; $("#kRecoger").textContent = c.recoger; $("#kInc").textContent = rows.filter(r => isInc(r) && !r.recogido).length;
   for (const k of ["Todos","Aviso","Recoger","Inc","Hoy"]) $("#c"+k).textContent = c[k.toLowerCase()];
   $("#nextRef").textContent = nextRef();
   document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === filtro && (b.classList.contains("chip") || filtro !== "todos"))));
   document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === vista)));
   renderCharts();
-  const list = filtrados(), el = $("#list");
+  let list = filtrados(); const el = $("#list");
   $("#expFiltLbl").textContent = list.length + " de " + rows.length + " registros con el filtro actual";
   if (!rows.length){ el.innerHTML = `<div class="card empty">${BOX_SVG("var(--accent)")}<strong>Aún no hay paquetes registrados</strong><span>Rellena «Nueva recepción» cuando llegue un envío. Aparecerá aquí con su foto, su estado y el aviso.</span></div>`; return; }
   if (!list.length){ el.innerHTML = `<div class="card empty"><strong>Nada con este filtro</strong><span>Prueba con «Todos» o cambia la búsqueda.</span></div>`; return; }
+  const total = list.length; list = list.slice(0, mostrar);
+  const mas = total > list.length ? `<div style="display:flex;justify-content:center;padding:14px"><button class="btn" type="button" data-mas>Mostrar más (${total - list.length} restantes)</button></div>` : "";
   if (vista === "galeria"){
     el.innerHTML = `<div class="gallery">` + list.map(r => `<button class="card tile" data-open="${esc(r.id)}">${thumbHTML(r,"img")}
-      <span class="tb st-${esc(r.estado)}"><span class="tp">${esc(r.proveedor)}</span><span class="ts">${fmt(r.fecha)} · ${esc(r.bultos)} bulto${r.bultos==1?"":"s"}</span><span class="pills">${pills(r)}</span></span></button>`).join("") + `</div>`;
+      <span class="tb st-${esc(r.estado)}"><span class="tp">${esc(r.proveedor)}</span><span class="ts">${fmt(r.fecha)} · ${esc(r.bultos)} bulto${r.bultos==1?"":"s"}</span><span class="pills">${pills(r)}</span></span></button>`).join("") + `</div>` + mas;
     return;
   }
   el.innerHTML = `<div class="card list">` + list.map(r => `<article class="entry" data-open="${esc(r.id)}">
@@ -731,9 +733,10 @@ function render(){
       <div class="eacts">
         <button class="btn small" data-aviso="${esc(r.id)}">${nAvisos(r) && !r.recogido ? "Recordar" : nAvisos(r) ? "Reenviar" : "Avisar"}</button>
         <button class="btn small" data-rec="${esc(r.id)}">${r.recogido ? "Deshacer" : "Recogido"}</button>
-      </div></article>`).join("") + `</div>`;
+      </div></article>`).join("") + `</div>` + mas;
 }
 $("#list").addEventListener("click", e => {
+  if (e.target.closest("[data-mas]")){ mostrar += 200; render(); return; }
   const a = e.target.closest("[data-aviso]"); if (a){ e.stopPropagation(); openDrawer(a.dataset.aviso, true); return; }
   const k = e.target.closest("[data-rec]"); if (k){ e.stopPropagation(); const r = rows.find(x=>x.id===k.dataset.rec); if (r) marcarRecogido(r.id, !r.recogido); return; }
   const o = e.target.closest("[data-open]"); if (o) openDrawer(o.dataset.open);
@@ -802,11 +805,11 @@ document.addEventListener("keydown", e => { if (e.key==="Escape"){ const v = doc
 
 /* ---------- filtros y vistas ---------- */
 document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
-  filtro = (b.classList.contains("kpi") && filtro === b.dataset.f) ? "todos" : b.dataset.f; render();
+  filtro = (b.classList.contains("kpi") && filtro === b.dataset.f) ? "todos" : b.dataset.f; mostrar = 100; render();
   if (b.classList.contains("kpi")) $(".log").scrollIntoView({behavior:"smooth", block:"start"});
 }));
 document.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => { vista = b.dataset.v; try { localStorage.setItem("pq_vista", vista); } catch {} render(); }));
-$("#q").addEventListener("input", render);
+$("#q").addEventListener("input", () => { mostrar = 100; render(); });
 
 /* ---------- exportar ---------- */
 const COLS = ["Referencia","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
@@ -858,9 +861,23 @@ function desdeBD(d){
     recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
 }
 function setSync(t){ $("#sync").textContent = t; }
+async function refrescarUno(id){
+  const { data, error } = await sb.from("paquetes").select("*").eq("id", id).maybeSingle();
+  if (error){ await cargar(); return; }
+  rows = rows.filter(x => x.id !== id);
+  if (data){ rows.push(desdeBD(data)); rows.sort((a,b) => String(b.fecha).localeCompare(String(a.fecha))); }
+  render();
+  if (data && data.foto_path && !fotoUrls[data.foto_path]){ const { data: u } = await sb.storage.from(BUCKET).createSignedUrl(data.foto_path, 60*60*12); if (u) { fotoUrls[data.foto_path] = u.signedUrl; render(); } }
+}
 async function cargar(){
   if (!sb) return false;
-  const { data, error } = await sb.from("paquetes").select("*").order("fecha", { ascending: false }).limit(1000);
+  let data = [], error = null;
+  for (let from = 0; ; from += 1000){
+    const res = await sb.from("paquetes").select("*").order("fecha", { ascending: false }).order("id").range(from, from + 999);
+    if (res.error){ error = res.error; break; }
+    data = data.concat(res.data);
+    if (res.data.length < 1000) break;
+  }
   if (error){ lastErr = (error.code ? error.code + " · " : "") + error.message; setSync("Error del registro: " + lastErr); console.error(error);
     if (/JWT|jwt|auth|401/i.test(error.message + error.code)) mostrarLogin(); return false; }
   rows = data.map(desdeBD); ready = true; lastErr = "";
@@ -879,7 +896,12 @@ let canal = null, tRecarga = null;
 function escuchar(){
   if (canal) return;
   canal = sb.channel("paquetes-cambios")
-    .on("postgres_changes", { event: "*", schema: "public", table: "paquetes" }, () => { clearTimeout(tRecarga); tRecarga = setTimeout(cargar, 400); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "paquetes" }, p => {
+      const id = (p.new && p.new.id) || (p.old && p.old.id);
+      if (p.eventType === "DELETE" && id){ rows = rows.filter(x => x.id !== id); render(); }
+      else if (id) refrescarUno(id);
+      else { clearTimeout(tRecarga); tRecarga = setTimeout(cargar, 400); }
+    })
     .subscribe();
 }
 function mostrarLogin(){ $("#login").hidden = false; $("#logout").hidden = true; setTimeout(() => $("#pw").focus(), 50); }
