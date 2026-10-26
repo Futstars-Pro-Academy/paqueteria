@@ -234,6 +234,17 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
 .alog{margin:6px 0 0;padding-left:0;list-style:none;font-weight:400;font-size:.84rem;color:var(--muted);display:flex;flex-direction:column;gap:2px}
 .iconbtn{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.destv{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.destorig{font-weight:400;font-size:.8rem;color:var(--muted);margin-top:3px}
+.danger{border:1px solid var(--coral-soft);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.dz-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dz-row span{display:block;font-size:.82rem;color:var(--muted)}
+.dz-confirm{display:flex;flex-direction:column;gap:10px;background:var(--coral-soft);border-radius:8px;padding:10px 12px}
+.dz-confirm p{margin:0;font-size:.88rem}
+.btn-del{color:var(--coral);border-color:var(--coral-soft)}
+.btn-del:hover{border-color:var(--coral);color:var(--coral)}
+.btn-del.solid{background:var(--coral);border-color:var(--coral);color:#fff}
+.btn-del.solid:hover{filter:brightness(1.07);color:#fff}
 .viewer{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));z-index:50;cursor:zoom-out}
 .viewer img{max-width:100%;max-height:100%;border-radius:6px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:11px 18px;border-radius:10px;font-size:.9rem;z-index:60;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
@@ -464,7 +475,7 @@ function setupCombo(box){
   const tg = document.createElement("button"); tg.type="button"; tg.className="tg"; tg.tabIndex=-1; tg.setAttribute("aria-label","Ver opciones");
   tg.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>`;
   box.appendChild(tg);
-  const ul = document.createElement("ul"); ul.className="menu"; ul.setAttribute("role","listbox"); ul.id = "lb-"+field; ul.hidden = true; box.appendChild(ul);
+  const ul = document.createElement("ul"); ul.className="menu"; ul.setAttribute("role","listbox"); ul.id = "lb-"+field+"-"+Math.random().toString(36).slice(2,7); ul.hidden = true; box.appendChild(ul);
   input.setAttribute("role","combobox"); input.setAttribute("aria-autocomplete","list"); input.setAttribute("aria-controls", ul.id); input.setAttribute("aria-expanded","false");
   let items = [], idx = -1, showAll = false;
   function build(){
@@ -539,8 +550,27 @@ async function marcarAvisado(id){
   try { const { error } = await sb.from("paquetes").update({ avisos: nAvisos(r) + 1, avisos_log: [...log, now] }).eq("id", id); if (error) throw error; await cargar(); return true; }
   catch(e){ toast("No se pudo marcar como avisado: " + (e.message||e.code)); return false; }
 }
+async function borrar(r){
+  const { data, error } = await sb.from("paquetes").delete().eq("id", r.id).select("id");
+  if (error){ toast("No se pudo borrar: " + (error.code ? error.code + " · " : "") + error.message); return false; }
+  if (!data || !data.length){ toast("No se pudo borrar: falta el permiso de borrado en Supabase. Avisa a Pachi."); return false; }
+  if (r.fotoPath){ const { error: fe } = await sb.storage.from(BUCKET).remove([r.fotoPath]); if (fe) console.warn("Foto no borrada", fe); }
+  rows = rows.filter(x => x.id !== r.id); render(); toast("Registro " + r.ref + " borrado"); return true;
+}
+async function cambiarDestinatario(r, nuevo){
+  nuevo = String(nuevo || "").trim();
+  if (!nuevo){ toast("Escribe el nombre del destinatario"); return false; }
+  if (nuevo === r.destinatario) return true;
+  const cambio = { destinatario: nuevo, destinatario_original: r.destinatarioOriginal || r.destinatario };
+  if (r.recogido) cambio.recogido_por = nuevo;
+  let { error } = await sb.from("paquetes").update(cambio).eq("id", r.id);
+  if (error && /destinatario_original/.test(error.message)){ delete cambio.destinatario_original; ({ error } = await sb.from("paquetes").update(cambio).eq("id", r.id)); }
+  if (error){ toast("No se pudo cambiar: " + error.message); return false; }
+  await cargar(); toast("Destinatario cambiado a " + nuevo); return true;
+}
 async function marcarRecogido(id, val){
-  try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null }).eq("id", id); if (error) throw error; await cargar(); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
+  const r0 = rows.find(x => x.id === id);
+  try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null, recogido_por: val && r0 ? r0.destinatario : null }).eq("id", id); if (error) throw error; await cargar(); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
   catch(e){ toast("No se pudo guardar: " + (e.message||e.code)); }
 }
 function noticeHTML(r){
@@ -727,7 +757,12 @@ function openDrawer(id, irAviso){
         <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
         <dt>Nº pedido</dt><dd>${esc(r.pedido || "No aplica")}</dd>
         <dt>Bultos</dt><dd>${esc(r.bultos)}</dd>
-        <dt>Destinatario</dt><dd>${esc(r.destinatario)}</dd>
+        <dt>${r.recogido ? "Retirado por" : "Destinatario"}</dt><dd>
+          <div class="destv"><span>${esc(r.destinatario)}</span><button class="btn small" type="button" data-dest-edit>Cambiar</button></div>
+          ${r.destinatarioOriginal && r.destinatarioOriginal !== r.destinatario ? `<div class="destorig">Llegó a nombre de: ${esc(r.destinatarioOriginal)}</div>` : ""}
+          <div class="deste" hidden><div class="combo" data-field="destinatario"><input class="inp" id="destEdit" placeholder="Persona que lo retira"></div>
+            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" type="button" data-dest-no>Cancelar</button><button class="btn small primary" type="button" data-dest-ok>Guardar</button></div></div>
+        </dd>
         <dt>Observaciones</dt><dd>${esc(r.obs || "—")}</dd>
         <dt>Registrado por</dt><dd>${esc(who)}</dd>
         <dt>Avisos enviados</dt><dd><span class="bignum">${nAvisos(r)}</span>${logAvisos(r).length ? `<ol class="alog">${logAvisos(r).map((t,i) => `<li>${ordinal(i+1)} aviso · ${fmt(t)}</li>`).join("")}</ol>` : `<span class="muted"> Pendiente del primer aviso</span>`}</dd>
@@ -735,8 +770,26 @@ function openDrawer(id, irAviso){
       </dl>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-rec2>${r.recogido ? "Volver a «en almacén»" : "Marcar como recogido"}</button></div>
       <div class="notice" id="dAviso" style="animation:none"><h3>${nAvisos(r) && !r.recogido ? "Enviar recordatorio (" + ordinal(nAvisos(r)+1) + " aviso)" : nAvisos(r) ? "Reenviar aviso" : "Avisar"}</h3>${html}</div>
+      <div class="danger" id="delBox">
+        <div class="dz-row"><div><b>¿Registro equivocado?</b><span>Bórralo y vuelve a registrarlo bien.</span></div>
+          <button class="btn small btn-del" type="button" data-del>Borrar registro</button></div>
+        <div class="dz-confirm" hidden>
+          <p>Se borrará <b>${esc(r.ref)}</b> (${esc(r.proveedor)}) y su foto. No se puede deshacer.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" data-del-no>Cancelar</button><button class="btn small btn-del solid" type="button" data-del-si>Sí, borrar</button></div>
+        </div>
+      </div>
     </div>`;
   wireNotice(d, r, m);
+  setupCombo(d.querySelector(".deste .combo"));
+  const de = d.querySelector(".deste"), dv = d.querySelector(".destv"), di = d.querySelector("#destEdit");
+  d.querySelector("[data-dest-edit]").onclick = () => { dv.hidden = true; de.hidden = false; di.value = r.destinatario; di.focus(); di.select(); };
+  d.querySelector("[data-dest-no]").onclick = () => { de.hidden = true; dv.hidden = false; };
+  const guardarDest = async () => { const b = d.querySelector("[data-dest-ok]"); b.disabled = true; if (await cambiarDestinatario(r, di.value)) openDrawer(r.id); else b.disabled = false; };
+  d.querySelector("[data-dest-ok]").onclick = guardarDest;
+  di.addEventListener("keydown", e => { if (e.key === "Enter" && d.querySelector(".deste .menu").hidden){ e.preventDefault(); guardarDest(); } });
+  d.querySelector("[data-del]").onclick = () => { d.querySelector(".dz-confirm").hidden = false; d.querySelector("[data-del]").hidden = true; d.querySelector("[data-del-si]").focus(); };
+  d.querySelector("[data-del-no]").onclick = () => { d.querySelector(".dz-confirm").hidden = true; d.querySelector("[data-del]").hidden = false; };
+  d.querySelector("[data-del-si]").onclick = async e => { const b = e.currentTarget; b.disabled = true; b.textContent = "Borrando…"; if (await borrar(r)) closeDrawer(); else { b.disabled = false; b.textContent = "Sí, borrar"; } };
   d.querySelector("[data-x]").onclick = () => closeDrawer();
   d.querySelector("[data-rec2]").onclick = () => { marcarRecogido(r.id, !r.recogido); closeDrawer(); };
   d.querySelector("[data-zoom]")?.addEventListener("click", () => { const v = document.createElement("div"); v.className="viewer"; v.innerHTML = `<img src="${esc(fotoSrc(r))}" alt="Foto del paquete">`; v.onclick = () => v.remove(); document.body.appendChild(v); });
@@ -756,10 +809,10 @@ document.querySelectorAll(".views button").forEach(b => b.addEventListener("clic
 $("#q").addEventListener("input", render);
 
 /* ---------- exportar ---------- */
-const COLS = ["Referencia","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
+const COLS = ["Referencia","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
 let expUrls = {};
 function filasExport(list){
-  return list.map(r => [r.ref, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario,
+  return list.map(r => [r.ref, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario, r.destinatarioOriginal || "",
     r.operario || "", nAvisos(r), fmt(logAvisos(r)[0]), fmt(logAvisos(r).slice(-1)[0]), r.recogido ? "Sí" : "No", fmt(r.recogidoEn), dias(r),
     r.fotoPath ? (expUrls[r.fotoPath] || "") : ""]);
 }
@@ -784,9 +837,9 @@ async function exportar(tipo){
   }
   if (!window.XLSX){ toast("No se pudo cargar el generador de Excel; exportando en CSV."); return exportar("csv"); }
   const ws = XLSX.utils.aoa_to_sheet([COLS, ...data]);
-  ws["!cols"] = [14,17,24,18,14,8,12,32,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
-  ws["!autofilter"] = { ref: "A1:Q" + (data.length+1) };
-  data.forEach((r,i) => { if (r[16]) { const ref = "Q" + (i+2); ws[ref].l = { Target: r[16], Tooltip: "Ver foto" }; } });
+  ws["!cols"] = [14,17,24,18,14,8,12,32,20,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
+  ws["!autofilter"] = { ref: "A1:R" + (data.length+1) };
+  data.forEach((r,i) => { if (r[17]) { const ref = "R" + (i+2); ws[ref].l = { Target: r[17], Tooltip: "Ver foto" }; } });
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Paquetería");
   const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
   return guardar("paqueteria_kimitec_" + stamp + (tipo==="xlsx-f" ? "_filtrado" : "") + ".xlsx", new Uint8Array(out));
@@ -802,7 +855,7 @@ function desdeBD(d){
   return { id: d.id, ref: d.ref, fecha: d.fecha, proveedor: d.proveedor, transportista: d.transportista, pedido: d.pedido || "",
     bultos: d.bultos, estado: d.estado, obs: d.obs || "", destinatario: d.destinatario, operario: d.operario || "", fotoPath: d.foto_path || null,
     avisos: d.avisos || 0, avisosLog: log, avisado: (d.avisos || 0) > 0, avisadoEn: log[0] || null,
-    recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "" };
+    recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
 }
 function setSync(t){ $("#sync").textContent = t; }
 async function cargar(){
