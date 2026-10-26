@@ -103,6 +103,13 @@ button:focus-visible,a:focus-visible,.kpi:focus-visible{outline:2px solid var(--
 .menu mark{background:none;color:var(--accent);font-weight:700}
 
 /* Estado */
+.tipos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tipos input{position:absolute;opacity:0;pointer-events:none}
+.tipos label{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 6px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;font-weight:700;background:var(--field);color:var(--muted);transition:all .15s}
+.tipos input:checked+label[data-t="Entrada"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.tipos input:checked+label[data-t="Salida"]{border-color:var(--plum);background:var(--plum-soft);color:var(--plum)}
+.tipos input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.p-plum{background:var(--plum-soft);color:var(--plum)}
 .states{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .states input{position:absolute;opacity:0;pointer-events:none}
 .states label{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;font-weight:600;font-size:.86rem;background:var(--field);transition:all .15s;color:var(--muted)}
@@ -316,10 +323,14 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
 <main class="wrap">
   <div class="col">
     <form class="card" id="f" novalidate autocomplete="off">
-      <div class="fhead"><h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nueva recepción</h2><span class="ref" id="nextRef">PQ-—</span></div>
+      <div class="fhead"><h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span id="fTitle">Nueva entrada</span></h2><span class="ref" id="nextRef">PQ-—</span></div>
 
+      <div class="tipos" role="radiogroup" aria-label="Tipo de registro">
+        <input type="radio" name="tipo" id="t1" value="Entrada" checked><label for="t1" data-t="Entrada"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Entrada</label>
+        <input type="radio" name="tipo" id="t2" value="Salida"><label for="t2" data-t="Salida"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21V9M7 14l5-5 5 5M4 3h16"/></svg>Salida</label>
+      </div>
       <div class="field">
-        <label class="lbl" for="proveedor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg>Proveedor</label>
+        <label class="lbl" for="proveedor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg><span id="lblProv">Proveedor</span></label>
         <div class="combo" data-field="proveedor"><input class="inp" id="proveedor" placeholder="Escribe o elige de la lista"></div>
       </div>
       <div class="row2">
@@ -338,7 +349,7 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
           <div class="stepper"><button type="button" id="bMenos" aria-label="Un bulto menos">−</button><input id="bultos" type="number" min="1" step="1" inputmode="numeric" value="1"><button type="button" id="bMas" aria-label="Un bulto más">+</button></div>
         </div>
         <div class="field">
-          <label class="lbl" for="destinatario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Destinatario</label>
+          <label class="lbl" for="destinatario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span id="lblDest">Destinatario</span></label>
           <div class="combo" data-field="destinatario"><input class="inp" id="destinatario" placeholder="Persona o dpto."></div>
         </div>
       </div>
@@ -368,7 +379,7 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
       </div>
       <div class="formmsg" id="msg" role="alert"></div>
       <button class="btn primary big" type="submit" id="save"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>Registrar y preparar aviso</button>
-      <div class="to">El aviso se abre en tu Outlook para <b id="toForm">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b>; solo tienes que pulsar Enviar.</div>
+      <div class="to" id="toHint">El aviso se abre en tu Outlook para <b id="toForm">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b>; solo tienes que pulsar Enviar.</div>
     </form>
     <div id="noticeSlot"></div>
   </div>
@@ -406,6 +417,8 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="chip" data-f="recoger" aria-pressed="false"><span class="sw" style="background:var(--sky)"></span>En almacén<span class="c" id="cRecoger">0</span></button>
       <button class="chip" data-f="inc" aria-pressed="false"><span class="sw" style="background:var(--coral)"></span>Incidencias<span class="c" id="cInc">0</span></button>
       <button class="chip" data-f="hoy" aria-pressed="false"><span class="sw" style="background:var(--accent)"></span>Hoy<span class="c" id="cHoy">0</span></button>
+      <button class="chip" data-f="ent" aria-pressed="false"><span class="sw" style="background:var(--accent)"></span>Entradas<span class="c" id="cEnt">0</span></button>
+      <button class="chip" data-f="sal" aria-pressed="false"><span class="sw" style="background:var(--plum)"></span>Salidas<span class="c" id="cSal">0</span></button>
     </div>
     <div id="list"><div class="card empty"><strong>Cargando registro…</strong><span>Conectando con el registro compartido del almacén.</span></div></div>
   </section>
@@ -448,6 +461,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
 function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const el=document.createElement("div"); el.className="toast"; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),3400); }
 const fotoSrc = r => fotoUrls[r.fotoPath] || "";
+const esSalida = r => r.tipo === "Salida";
 const isInc = r => r.estado && r.estado !== "Correcto";
 const esHoy = r => dayKey(new Date(r.fecha)) === dayKey(new Date());
 
@@ -540,7 +554,8 @@ function mail(r){
   const body = lines.join("\n");
   const q = "to="+encodeURIComponent(COMPRAS)+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   return { subject, body, web: "https://outlook.office.com/mail/deeplink/compose?" + q, web365: "https://outlook.office365.com/mail/deeplink/compose?" + q,
-    app: "mailto:" + DESTINATARIOS.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
+    app: "mailto:" + DESTINATARIOS.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body),
+    outlookApp: "ms-outlook://compose?to=" + encodeURIComponent(DESTINATARIOS.join(",")) + "&subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
 }
 async function marcarAvisado(id){
   const r = rows.find(x => x.id === id); if (!r || !ready) return false;
@@ -573,10 +588,14 @@ async function marcarRecogido(id, val){
   try { const { error } = await sb.from("paquetes").update({ recogido: val, recogido_en: val ? new Date().toISOString() : null, recogido_por: val && r0 ? r0.destinatario : null }).eq("id", id); if (error) throw error; await refrescarUno(id); toast(val ? "Marcado como recogido" : "Vuelve a estar en almacén"); }
   catch(e){ toast("No se pudo guardar: " + (e.message||e.code)); }
 }
+const ES_MOVIL = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+const ICO_MAIL = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>`;
 function noticeHTML(r){
   const m = mail(r);
   return { m, html: `<div class="acts">
-      <a class="btn primary" target="_blank" rel="noopener" href="${esc(m.web)}" data-mark><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Abrir en Outlook web</a></div>
+      ${ES_MOVIL
+        ? `<a class="btn primary" href="${esc(m.outlookApp)}" data-mark>${ICO_MAIL}Abrir en Outlook</a><a class="btn" href="${esc(m.app)}" data-mark>Otra app de correo</a>`
+        : `<a class="btn primary" target="_blank" rel="noopener" href="${esc(m.web)}" data-mark>${ICO_MAIL}Abrir en Outlook web</a>`}</div>
     <div class="cp"><p style="margin:0;font-size:.85rem"><b>Si no se abre ningún correo:</b> abre Outlook, crea un correo nuevo y pega estos tres datos.</p>
       <div class="cprow"><span class="cpl">Para</span><code class="cpv" data-v="to"></code><button class="btn small" type="button" data-cp="to">Copiar</button></div>
       <div class="cprow"><span class="cpl">Asunto</span><code class="cpv" data-v="subject"></code><button class="btn small" type="button" data-cp="subject">Copiar</button></div>
@@ -635,6 +654,19 @@ function resetFoto(){
   $("#fotoTxt").innerHTML = `<strong>Hacer foto o elegir imagen</strong>En el móvil abre la cámara. En el ordenador también puedes arrastrarla aquí.`;
 }
 
+/* ---------- entrada / salida ---------- */
+const tipoActual = () => (document.querySelector("input[name=tipo]:checked") || {}).value || "Entrada";
+function aplicarTipo(){
+  const sal = tipoActual() === "Salida";
+  $("#fTitle").textContent = sal ? "Nueva salida" : "Nueva entrada";
+  $("#lblProv").textContent = sal ? "Remitente (quién lo envía)" : "Proveedor";
+  $("#lblDest").textContent = sal ? "Destinatario (a quién va)" : "Destinatario";
+  $("#save").lastChild.textContent = sal ? "Registrar salida" : "Registrar y preparar aviso";
+  $("#toHint").hidden = sal;
+  $("#f").style.borderTopColor = sal ? "var(--plum)" : "";
+}
+document.querySelectorAll("input[name=tipo]").forEach(i => i.addEventListener("change", aplicarTipo));
+
 /* ---------- guardar ---------- */
 $("#f").addEventListener("submit", async e => {
   e.preventDefault();
@@ -656,16 +688,18 @@ $("#f").addEventListener("submit", async e => {
     }
     const nuevo = { ref: nextRef(), fecha: new Date().toISOString(), proveedor: v("proveedor"), transportista: v("transportista"),
       pedido: v("pedido") || null, bultos, estado: document.querySelector("input[name=estado]:checked").value, obs: v("obs") || null,
-      destinatario: v("destinatario"), operario: v("operario") || null, foto_path };
+      destinatario: v("destinatario"), operario: v("operario") || null, foto_path, tipo: tipoActual() };
     const { data, error } = await sb.from("paquetes").insert(nuevo).select().single();
-    if (error) throw error;
+    if (error){ if (/tipo/.test(error.message)) throw new Error("falta la columna «tipo» en Supabase (ejecuta el SQL de entradas y salidas)"); throw error; }
     const r = desdeBD(data);
     if (fotoBlob && foto_path) fotoUrls[foto_path] = URL.createObjectURL(fotoBlob);
-    $("#f").reset(); $("#bultos").value = 1; resetFoto(); $("#operario").value = v_operario();
+    const tSel = tipoActual(); $("#f").reset(); $("#bultos").value = 1; resetFoto(); $("#operario").value = v_operario(); document.querySelector(`input[name=tipo][value="${tSel}"]`).checked = true; aplicarTipo();
     await refrescarUno(r.id);
-    showNotice(r);
+    if (esSalida(r)){ $("#noticeSlot").innerHTML = ""; toast("Salida registrada · " + r.ref); }
+    else showNotice(r);
+    aplicarTipo();
   } catch(err){ $("#msg").textContent = "No se pudo registrar: " + (err.message || err.code || "error") + ". Inténtalo de nuevo."; }
-  finally { btn.disabled = false; btn.lastChild.textContent = "Registrar y preparar aviso"; }
+  finally { btn.disabled = false; aplicarTipo(); }
 });
 
 /* ---------- gráficos ---------- */
@@ -692,7 +726,7 @@ function renderCharts(){
 /* ---------- registro ---------- */
 function filtrados(){
   const q = norm($("#q").value);
-  let list = rows.filter(r => filtro === "todos" || (filtro==="aviso" && !r.avisado && !r.recogido) || (filtro==="recoger" && !r.recogido) || (filtro==="inc" && isInc(r)) || (filtro==="hoy" && esHoy(r)));
+  let list = rows.filter(r => filtro === "todos" || (filtro==="aviso" && !r.avisado && !r.recogido && !esSalida(r)) || (filtro==="ent" && !esSalida(r)) || (filtro==="sal" && esSalida(r)) || (filtro==="recoger" && !r.recogido) || (filtro==="inc" && isInc(r)) || (filtro==="hoy" && esHoy(r)));
   if (q) list = list.filter(r => norm([r.ref,r.proveedor,r.transportista,r.pedido,r.destinatario,r.obs].join(" ")).includes(q));
   return list;
 }
@@ -700,14 +734,16 @@ const thumbHTML = (r, cls) => r.fotoPath && fotoSrc(r) ? `<img class="${cls}" sr
   : `<span class="noimg ${cls==="img"?"":""}" style="background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</span>`;
 const estPill = r => `<span class="pill ${r.estado==="Correcto"?"p-ok":r.estado==="Dañado"?"p-bad":"p-warn"}">${esc(r.estado)}</span>`;
 const pills = r => { const n = nAvisos(r), d = dias(r);
+  if (esSalida(r)) return `<span class="pill p-plum">Salida</span>` + estPill(r)
+    + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Enviado" : "Pendiente de recoger · " + (d ? diasTxt(d) : "hoy")}</span>`;
   return estPill(r) + (!n && r.recogido ? "" : `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`)
     + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Recogido en " + diasTxt(d) : "En almacén · " + (d ? diasTxt(d) : "hoy")}</span>`; };
 const carrier = t => `<span class="carrier"><span class="mono" style="background:${monoColor(t)}">${esc(initials(t))}</span>${esc(t)}</span>`;
 
 function render(){
-  const c = { todos: rows.length, aviso: rows.filter(r=>!r.avisado && !r.recogido).length, recoger: rows.filter(r=>!r.recogido).length, inc: rows.filter(isInc).length, hoy: rows.filter(esHoy).length };
+  const c = { todos: rows.length, aviso: rows.filter(r=>!r.avisado && !r.recogido && !esSalida(r)).length, ent: rows.filter(r=>!esSalida(r)).length, sal: rows.filter(esSalida).length, recoger: rows.filter(r=>!r.recogido).length, inc: rows.filter(isInc).length, hoy: rows.filter(esHoy).length };
   $("#kHoy").textContent = c.hoy; $("#kAviso").textContent = c.aviso; $("#kRecoger").textContent = c.recoger; $("#kInc").textContent = rows.filter(r => isInc(r) && !r.recogido).length;
-  for (const k of ["Todos","Aviso","Recoger","Inc","Hoy"]) $("#c"+k).textContent = c[k.toLowerCase()];
+  for (const k of ["Todos","Aviso","Recoger","Inc","Hoy","Ent","Sal"]) $("#c"+k).textContent = c[k.toLowerCase()];
   $("#nextRef").textContent = nextRef();
   document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === filtro && (b.classList.contains("chip") || filtro !== "todos"))));
   document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === vista)));
@@ -731,8 +767,8 @@ function render(){
         <div class="pills">${pills(r)}</div>
       </div>
       <div class="eacts">
-        <button class="btn small" data-aviso="${esc(r.id)}">${nAvisos(r) && !r.recogido ? "Recordar" : nAvisos(r) ? "Reenviar" : "Avisar"}</button>
-        <button class="btn small" data-rec="${esc(r.id)}">${r.recogido ? "Deshacer" : "Recogido"}</button>
+        ${esSalida(r) ? "" : `<button class="btn small" data-aviso="${esc(r.id)}">${nAvisos(r) && !r.recogido ? "Recordar" : nAvisos(r) ? "Reenviar" : "Avisar"}</button>`}
+        <button class="btn small" data-rec="${esc(r.id)}">${r.recogido ? "Deshacer" : esSalida(r) ? "Enviado" : "Recogido"}</button>
       </div></article>`).join("") + `</div>` + mas;
 }
 $("#list").addEventListener("click", e => {
@@ -756,11 +792,12 @@ function openDrawer(id, irAviso){
       ${r.fotoPath && fotoSrc(r) ? `<img class="big" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" data-zoom>` : `<div class="noimg" style="width:100%;height:auto;aspect-ratio:16/9;background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</div>`}
       <div class="pills">${pills(r)}</div>
       <dl class="dl">
-        <dt>Llegada</dt><dd>${fmt(r.fecha)}</dd>
+        <dt>Tipo</dt><dd>${esSalida(r) ? `<span class="pill p-plum">Salida</span>` : `<span class="pill p-ok">Entrada</span>`}</dd>
+        <dt>${esSalida(r) ? "Fecha" : "Llegada"}</dt><dd>${fmt(r.fecha)}</dd>
         <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
         <dt>Nº pedido</dt><dd>${esc(r.pedido || "No aplica")}</dd>
         <dt>Bultos</dt><dd>${esc(r.bultos)}</dd>
-        <dt>${r.recogido ? "Retirado por" : "Destinatario"}</dt><dd>
+        <dt>${esSalida(r) ? "Destinatario" : r.recogido ? "Retirado por" : "Destinatario"}</dt><dd>
           <div class="destv"><span>${esc(r.destinatario)}</span><button class="btn small" type="button" data-dest-edit>Cambiar</button></div>
           ${r.destinatarioOriginal && r.destinatarioOriginal !== r.destinatario ? `<div class="destorig">Llegó a nombre de: ${esc(r.destinatarioOriginal)}</div>` : ""}
           <div class="deste" hidden><div class="combo" data-field="destinatario"><input class="inp" id="destEdit" placeholder="Persona que lo retira"></div>
@@ -768,11 +805,11 @@ function openDrawer(id, irAviso){
         </dd>
         <dt>Observaciones</dt><dd>${esc(r.obs || "—")}</dd>
         <dt>Registrado por</dt><dd>${esc(who)}</dd>
-        <dt>Avisos enviados</dt><dd><span class="bignum">${nAvisos(r)}</span>${logAvisos(r).length ? `<ol class="alog">${logAvisos(r).map((t,i) => `<li>${ordinal(i+1)} aviso · ${fmt(t)}</li>`).join("")}</ol>` : `<span class="muted"> Pendiente del primer aviso</span>`}</dd>
-        <dt>${r.recogido ? "Tardó en recogerse" : "Lleva en almacén"}</dt><dd><span class="bignum" style="color:${!r.recogido && dias(r) >= 3 ? "var(--coral)" : "var(--ink)"}">${dias(r)}</span> ${dias(r) === 1 ? "día" : "días"}${r.recogido ? " · recogido el " + fmt(r.recogidoEn) : ""}</dd>
+        ${esSalida(r) ? "" : `<dt>Avisos enviados</dt><dd><span class="bignum">${nAvisos(r)}</span>${logAvisos(r).length ? `<ol class="alog">${logAvisos(r).map((t,i) => `<li>${ordinal(i+1)} aviso · ${fmt(t)}</li>`).join("")}</ol>` : `<span class="muted"> Pendiente del primer aviso</span>`}</dd>`}
+        <dt>${esSalida(r) ? (r.recogido ? "Tardó en salir" : "Esperando recogida") : r.recogido ? "Tardó en recogerse" : "Lleva en almacén"}</dt><dd><span class="bignum" style="color:${!r.recogido && dias(r) >= 3 ? "var(--coral)" : "var(--ink)"}">${dias(r)}</span> ${dias(r) === 1 ? "día" : "días"}${r.recogido ? " · recogido el " + fmt(r.recogidoEn) : ""}</dd>
       </dl>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-rec2>${r.recogido ? "Volver a «en almacén»" : "Marcar como recogido"}</button></div>
-      <div class="notice" id="dAviso" style="animation:none"><h3>${nAvisos(r) && !r.recogido ? "Enviar recordatorio (" + ordinal(nAvisos(r)+1) + " aviso)" : nAvisos(r) ? "Reenviar aviso" : "Avisar"}</h3>${html}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-rec2>${r.recogido ? "Volver a «en almacén»" : esSalida(r) ? "Marcar como enviado" : "Marcar como recogido"}</button></div>
+      <div class="notice" id="dAviso" style="animation:none" ${esSalida(r) ? "hidden" : ""}><h3>${nAvisos(r) && !r.recogido ? "Enviar recordatorio (" + ordinal(nAvisos(r)+1) + " aviso)" : nAvisos(r) ? "Reenviar aviso" : "Avisar"}</h3>${html}</div>
       <div class="danger" id="delBox">
         <div class="dz-row"><div><b>¿Registro equivocado?</b><span>Bórralo y vuelve a registrarlo bien.</span></div>
           <button class="btn small btn-del" type="button" data-del>Borrar registro</button></div>
@@ -797,7 +834,7 @@ function openDrawer(id, irAviso){
   d.querySelector("[data-rec2]").onclick = () => { marcarRecogido(r.id, !r.recogido); closeDrawer(); };
   d.querySelector("[data-zoom]")?.addEventListener("click", () => { const v = document.createElement("div"); v.className="viewer"; v.innerHTML = `<img src="${esc(fotoSrc(r))}" alt="Foto del paquete">`; v.onclick = () => v.remove(); document.body.appendChild(v); });
   document.body.append(scrim, d);
-  if (irAviso){ const n = d.querySelector("#dAviso"); n.scrollIntoView({block:"start"}); n.querySelector("a.btn.primary").focus(); }
+  if (irAviso && !esSalida(r)){ const n = d.querySelector("#dAviso"); n.scrollIntoView({block:"start"}); n.querySelector("a.btn.primary").focus(); }
   else d.querySelector("[data-x]").focus();
 }
 function closeDrawer(keep){ document.querySelectorAll(".scrim,.drawer").forEach(x => x.remove()); if (!keep) drawerId = null; }
@@ -812,10 +849,10 @@ document.querySelectorAll(".views button").forEach(b => b.addEventListener("clic
 $("#q").addEventListener("input", () => { mostrar = 100; render(); });
 
 /* ---------- exportar ---------- */
-const COLS = ["Referencia","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
+const COLS = ["Referencia","Tipo","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
 let expUrls = {};
 function filasExport(list){
-  return list.map(r => [r.ref, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario, r.destinatarioOriginal || "",
+  return list.map(r => [r.ref, r.tipo, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario, r.destinatarioOriginal || "",
     r.operario || "", nAvisos(r), fmt(logAvisos(r)[0]), fmt(logAvisos(r).slice(-1)[0]), r.recogido ? "Sí" : "No", fmt(r.recogidoEn), dias(r),
     r.fotoPath ? (expUrls[r.fotoPath] || "") : ""]);
 }
@@ -840,9 +877,9 @@ async function exportar(tipo){
   }
   if (!window.XLSX){ toast("No se pudo cargar el generador de Excel; exportando en CSV."); return exportar("csv"); }
   const ws = XLSX.utils.aoa_to_sheet([COLS, ...data]);
-  ws["!cols"] = [14,17,24,18,14,8,12,32,20,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
-  ws["!autofilter"] = { ref: "A1:R" + (data.length+1) };
-  data.forEach((r,i) => { if (r[17]) { const ref = "R" + (i+2); ws[ref].l = { Target: r[17], Tooltip: "Ver foto" }; } });
+  ws["!cols"] = [14,9,17,24,18,14,8,12,32,20,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
+  ws["!autofilter"] = { ref: "A1:S" + (data.length+1) };
+  data.forEach((r,i) => { if (r[18]) { const ref = "S" + (i+2); ws[ref].l = { Target: r[18], Tooltip: "Ver foto" }; } });
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Paquetería");
   const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
   return guardar("paqueteria_kimitec_" + stamp + (tipo==="xlsx-f" ? "_filtrado" : "") + ".xlsx", new Uint8Array(out));
@@ -858,7 +895,7 @@ function desdeBD(d){
   return { id: d.id, ref: d.ref, fecha: d.fecha, proveedor: d.proveedor, transportista: d.transportista, pedido: d.pedido || "",
     bultos: d.bultos, estado: d.estado, obs: d.obs || "", destinatario: d.destinatario, operario: d.operario || "", fotoPath: d.foto_path || null,
     avisos: d.avisos || 0, avisosLog: log, avisado: (d.avisos || 0) > 0, avisadoEn: log[0] || null,
-    recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
+    tipo: d.tipo || "Entrada", recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
 }
 function setSync(t){ $("#sync").textContent = t; }
 async function refrescarUno(id){
