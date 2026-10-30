@@ -109,6 +109,19 @@ button:focus-visible,a:focus-visible,.kpi:focus-visible{outline:2px solid var(--
 .tipos input:checked+label[data-t="Entrada"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .tipos input:checked+label[data-t="Salida"]{border-color:var(--plum);background:var(--plum-soft);color:var(--plum)}
 .tipos input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.ambs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ambs input{position:absolute;opacity:0;pointer-events:none}
+.ambs label{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;font-weight:700;background:var(--field);color:var(--muted);text-align:center;transition:all .15s}
+.ambs label small{font-weight:500;font-size:.75rem;opacity:.85}
+.ambs input:checked+label[data-a="Empresa"]{border-color:var(--sky);background:var(--sky-soft);color:var(--sky)}
+.ambs input:checked+label[data-a="Personal"]{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}
+.ambs input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.ambs.err label{border-color:var(--coral)}
+.dseg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.dseg button{font:inherit;font-size:.82rem;font-weight:600;border:0;background:var(--panel);color:var(--muted);padding:5px 10px;cursor:pointer}
+.dseg button[aria-pressed="true"][data-amb="Empresa"]{background:var(--sky-soft);color:var(--sky)}
+.dseg button[aria-pressed="true"][data-amb="Personal"]{background:var(--amber-soft);color:var(--amber)}
+.p-amb{background:var(--amber-soft);color:var(--amber)}
 .p-plum{background:var(--plum-soft);color:var(--plum)}
 .states{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .states input{position:absolute;opacity:0;pointer-events:none}
@@ -133,6 +146,21 @@ button:focus-visible,a:focus-visible,.kpi:focus-visible{outline:2px solid var(--
 .drop .pic{width:76px;height:76px;border-radius:8px;flex:none;object-fit:cover;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .drop .ph{flex:1;min-width:0;font-size:.86rem;color:var(--muted)}
 .drop .ph strong{display:block;color:var(--ink);font-size:.92rem}
+.fstrip{display:flex;gap:8px;flex-wrap:wrap}
+.fthumb{position:relative;width:72px;height:72px;flex:none}
+.fthumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;border:1px solid var(--line)}
+.fthumb button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:2px solid var(--panel);background:var(--coral);color:#fff;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.fthumb .n1{position:absolute;left:4px;bottom:4px;background:#000a;color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:999px}
+.tcount{position:absolute;right:4px;bottom:4px;background:#000b;color:#fff;font-size:.68rem;font-weight:700;padding:1px 6px;border-radius:999px;display:inline-flex;gap:3px;align-items:center}
+.twrap{position:relative;display:block;flex:none}
+.dgal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.dgal button{padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;background:none;aspect-ratio:1}
+.dgal button[aria-current="true"]{border-color:var(--accent)}
+.dgal img{width:100%;height:100%;object-fit:cover;display:block}
+.dgal .addf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px dashed var(--line);color:var(--accent);font-size:.7rem;font-weight:700;background:var(--field)}
+.viewer .vnav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:0;background:#fff3;color:#fff;font-size:1.6rem;cursor:pointer}
+.viewer .vprev{left:max(12px,env(safe-area-inset-left,0px))}.viewer .vnext{right:max(12px,env(safe-area-inset-right,0px))}
+.viewer .vcount{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);color:#fff;font-size:.85rem;background:#0008;padding:3px 10px;border-radius:999px}
 
 .btn{font:inherit;font-weight:600;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;transition:all .15s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -353,6 +381,13 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
           <div class="combo" data-field="destinatario"><input class="inp" id="destinatario" placeholder="Persona o dpto."></div>
         </div>
       </div>
+      <div class="field" id="ambField">
+        <span class="lbl" id="lblAmb">¿Es de empresa o personal?</span>
+        <div class="ambs" id="ambs" role="radiogroup" aria-labelledby="lblAmb">
+          <input type="radio" name="ambito" id="a1" value="Empresa"><label for="a1" data-a="Empresa">Empresa<small>Recogida en horario laboral</small></label>
+          <input type="radio" name="ambito" id="a2" value="Personal"><label for="a2" data-a="Personal">Personal<small>Recogida de 12:00 a 13:00</small></label>
+        </div>
+      </div>
       <div class="field">
         <span class="lbl" id="lblEstado">Estado a la llegada</span>
         <div class="states" role="radiogroup" aria-labelledby="lblEstado">
@@ -366,12 +401,13 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
         <div class="combo" data-field="obs"><input class="inp" id="obs" placeholder="Caja abierta, debe recogerlo…"></div>
       </div>
       <div class="field">
-        <span class="lbl">Foto del paquete o albarán</span>
+        <span class="lbl">Fotos del paquete o albarán <span class="opt">(puedes añadir varias)</span></span>
+        <div class="fstrip" id="fstrip" hidden></div>
         <label class="drop" id="drop" for="foto">
-          <span class="pic" id="picBox"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/></svg></span>
-          <span class="ph" id="fotoTxt"><strong>Hacer foto o elegir imagen</strong>En el móvil abre la cámara. En el ordenador también puedes arrastrarla aquí.</span>
+          <span class="pic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          <span class="ph" id="fotoTxt"><strong>Hacer foto o elegir imágenes</strong>En el móvil abre la cámara. En el ordenador puedes elegir o arrastrar varias.</span>
         </label>
-        <input type="file" id="foto" accept="image/*" capture="environment" hidden>
+        <input type="file" id="foto" accept="image/*" multiple hidden>
       </div>
       <div class="field">
         <label class="lbl" for="operario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Registrado por</label>
@@ -451,7 +487,7 @@ const DEFAULTS = {
 };
 const $ = s => document.querySelector(s);
 let sb = null, ready = false, lastErr = "", mostrar = 100;
-let rows = [], filtro = "todos", vista = "lista", fotoBlob = null, fotoUrls = {};
+let rows = [], filtro = "todos", vista = "lista", fotoBlobs = [], fotoUrls = {};
 try { vista = localStorage.getItem("pq_vista") || "lista"; } catch {}
 
 const pad = n => String(n).padStart(2,"0");
@@ -461,7 +497,12 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
 function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const el=document.createElement("div"); el.className="toast"; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),3400); }
 const fotoSrc = r => fotoUrls[r.fotoPath] || "";
+const MAX_FOTOS = 10;
 const esSalida = r => r.tipo === "Salida";
+const HORARIO = {
+  Personal: "Al ser un paquete personal, el horario de recogida es de 12:00 a 13:00.",
+  Empresa: "Al ser un paquete de empresa, puedes pasar a recogerlo en cualquier momento de la jornada laboral."
+};
 const isInc = r => r.estado && r.estado !== "Correcto";
 const esHoy = r => dayKey(new Date(r.fecha)) === dayKey(new Date());
 
@@ -548,9 +589,12 @@ function mail(r){
   lines.push(
     "Referencia: " + r.ref, "Fecha y hora: " + fmt(r.fecha), "Proveedor: " + r.proveedor, "Transportista: " + r.transportista,
     "Nº pedido: " + (r.pedido || "No aplica"), "Bultos: " + r.bultos, "Estado: " + r.estado);
+  if (r.ambito) lines.push("Tipo de paquete: " + r.ambito);
   if (r.obs) lines.push("Observaciones: " + r.obs);
-  lines.push("Destinatario: " + r.destinatario, "", r.fotoPath ? "La foto está disponible en el Registro de Paquetería del almacén." : "Sin foto adjunta.",
-    "Queda en el almacén pendiente de recogida.", "", "Un saludo,", "Almacén · Kimitec");
+  lines.push("Destinatario: " + r.destinatario, "", r.fotoPaths.length ? (r.fotoPaths.length > 1 ? "Hay " + r.fotoPaths.length + " fotos disponibles" : "La foto está disponible") + " en el Registro de Paquetería del almacén." : "Sin foto adjunta.",
+    "Queda en el almacén pendiente de recogida.");
+  if (HORARIO[r.ambito]) lines.push(HORARIO[r.ambito]);
+  lines.push("", "Un saludo,", "Almacén · Kimitec");
   const body = lines.join("\n");
   const q = "to="+encodeURIComponent(COMPRAS)+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   return { subject, body, web: "https://outlook.office.com/mail/deeplink/compose?" + q, web365: "https://outlook.office365.com/mail/deeplink/compose?" + q,
@@ -569,7 +613,7 @@ async function borrar(r){
   const { data, error } = await sb.from("paquetes").delete().eq("id", r.id).select("id");
   if (error){ toast("No se pudo borrar: " + (error.code ? error.code + " · " : "") + error.message); return false; }
   if (!data || !data.length){ toast("No se pudo borrar: falta el permiso de borrado en Supabase. Avisa a Pachi."); return false; }
-  if (r.fotoPath){ const { error: fe } = await sb.storage.from(BUCKET).remove([r.fotoPath]); if (fe) console.warn("Foto no borrada", fe); }
+  if (r.fotoPaths.length){ const { error: fe } = await sb.storage.from(BUCKET).remove(r.fotoPaths); if (fe) console.warn("Foto no borrada", fe); }
   rows = rows.filter(x => x.id !== r.id); render(); toast("Registro " + r.ref + " borrado"); return true;
 }
 async function cambiarDestinatario(r, nuevo){
@@ -628,17 +672,36 @@ function showNotice(r){
 }
 
 /* ---------- foto ---------- */
-async function setFoto(f){
-  if (!f || !/^image\//.test(f.type)) { toast("Elige un archivo de imagen"); return; }
-  try { fotoBlob = await shrink(f); } catch { fotoBlob = f; }
-  $("#picBox").outerHTML = `<img class="pic" id="picBox" src="${URL.createObjectURL(fotoBlob)}" alt="Vista previa">`;
-  $("#fotoTxt").innerHTML = `<strong>Foto lista</strong>Pulsa para cambiarla.`;
+async function addFotos(files){
+  const imgs = [...(files || [])].filter(f => /^image\//.test(f.type));
+  if (!imgs.length){ toast("Elige un archivo de imagen"); return; }
+  for (const f of imgs){
+    if (fotoBlobs.length >= MAX_FOTOS){ toast("Máximo " + MAX_FOTOS + " fotos por registro"); break; }
+    let b; try { b = await shrink(f); } catch { b = f; }
+    fotoBlobs.push(b);
+  }
+  pintarFotos();
 }
-$("#foto").addEventListener("change", e => setFoto(e.target.files[0]));
+function pintarFotos(){
+  const st = $("#fstrip"); st.hidden = !fotoBlobs.length;
+  st.innerHTML = fotoBlobs.map((b,i) => `<div class="fthumb"><img src="${URL.createObjectURL(b)}" alt="Foto ${i+1}">${i===0 ? '<span class="n1">Principal</span>' : ""}<button type="button" data-rmf="${i}" aria-label="Quitar foto ${i+1}">×</button></div>`).join("");
+  $("#fotoTxt").innerHTML = fotoBlobs.length ? `<strong>${fotoBlobs.length} foto${fotoBlobs.length>1?"s":""} lista${fotoBlobs.length>1?"s":""}</strong>Pulsa para añadir otra.` : `<strong>Hacer foto o elegir imágenes</strong>En el móvil abre la cámara. En el ordenador puedes elegir o arrastrar varias.`;
+}
+$("#fstrip").addEventListener("click", e => { const b = e.target.closest("[data-rmf]"); if (!b) return; fotoBlobs.splice(+b.dataset.rmf, 1); pintarFotos(); });
+$("#foto").addEventListener("change", e => { addFotos(e.target.files); e.target.value = ""; });
 const drop = $("#drop");
 ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", e => setFoto(e.dataTransfer.files[0]));
+drop.addEventListener("drop", e => addFotos(e.dataTransfer.files));
+async function subirFotos(blobs){
+  const paths = [];
+  for (const b of blobs){
+    const d = new Date(), path = d.getFullYear() + "/" + pad(d.getMonth()+1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2)) + ".jpg";
+    const { error } = await sb.storage.from(BUCKET).upload(path, b, { contentType: "image/jpeg" });
+    if (error) toast("Una foto no se pudo subir (" + error.message + ")"); else { paths.push(path); fotoUrls[path] = URL.createObjectURL(b); }
+  }
+  return paths;
+}
 function shrink(file){
   return new Promise((res, rej) => {
     const img = new Image();
@@ -648,11 +711,7 @@ function shrink(file){
     img.onerror = rej; img.src = URL.createObjectURL(file);
   });
 }
-function resetFoto(){
-  fotoBlob = null; $("#foto").value = "";
-  $("#picBox").outerHTML = `<span class="pic" id="picBox"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/></svg></span>`;
-  $("#fotoTxt").innerHTML = `<strong>Hacer foto o elegir imagen</strong>En el móvil abre la cámara. En el ordenador también puedes arrastrarla aquí.`;
-}
+function resetFoto(){ fotoBlobs = []; $("#foto").value = ""; pintarFotos(); }
 
 /* ---------- entrada / salida ---------- */
 const tipoActual = () => (document.querySelector("input[name=tipo]:checked") || {}).value || "Entrada";
@@ -663,9 +722,11 @@ function aplicarTipo(){
   $("#lblDest").textContent = sal ? "Destinatario (a quién va)" : "Destinatario";
   $("#save").lastChild.textContent = sal ? "Registrar salida" : "Registrar y preparar aviso";
   $("#toHint").hidden = sal;
+  $("#ambField").hidden = sal;
   $("#f").style.borderTopColor = sal ? "var(--plum)" : "";
 }
 document.querySelectorAll("input[name=tipo]").forEach(i => i.addEventListener("change", aplicarTipo));
+document.querySelectorAll("input[name=ambito]").forEach(i => i.addEventListener("change", () => { $("#ambs").classList.remove("err"); }));
 
 /* ---------- guardar ---------- */
 $("#f").addEventListener("submit", async e => {
@@ -674,25 +735,24 @@ $("#f").addEventListener("submit", async e => {
   const falta = [["proveedor","el proveedor"],["transportista","el transportista"],["destinatario","el destinatario"]].filter(([id]) => !v(id)).map(x=>x[1]);
   const bultos = parseInt($("#bultos").value, 10);
   if (!(bultos >= 1)) falta.push("el número de bultos");
+  const ambSel = (document.querySelector("input[name=ambito]:checked") || {}).value || null;
+  if (tipoActual() === "Entrada" && !ambSel){ falta.push("indicar si es de empresa o personal"); $("#ambs").classList.add("err"); }
   if (falta.length){ $("#msg").textContent = "Falta " + falta.join(", ") + "."; return; }
   if (!ready){ try { await cargar(); } catch(e){ lastErr = e.message; } }
   if (!ready){ $("#msg").textContent = "No se puede conectar con el registro. Detalle: " + (lastErr || "sin sesión iniciada") + ". Pásale este mensaje a Pachi."; return; }
   try { localStorage.setItem("pq_operario", v("operario")); } catch {}
   $("#msg").textContent = ""; const btn = $("#save"); btn.disabled = true; btn.lastChild.textContent = "Guardando…";
   try {
-    let foto_path = null;
-    if (fotoBlob){
-      const d = new Date(), path = d.getFullYear() + "/" + pad(d.getMonth()+1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2)) + ".jpg";
-      const { error } = await sb.storage.from(BUCKET).upload(path, fotoBlob, { contentType: "image/jpeg" });
-      if (error) toast("La foto no se pudo subir (" + error.message + "); se guarda sin foto."); else foto_path = path;
-    }
+    if (fotoBlobs.length) btn.lastChild.textContent = "Subiendo " + fotoBlobs.length + " foto" + (fotoBlobs.length>1?"s":"") + "…";
+    const fotos = await subirFotos(fotoBlobs), foto_path = fotos[0] || null;
     const nuevo = { ref: nextRef(), fecha: new Date().toISOString(), proveedor: v("proveedor"), transportista: v("transportista"),
       pedido: v("pedido") || null, bultos, estado: document.querySelector("input[name=estado]:checked").value, obs: v("obs") || null,
-      destinatario: v("destinatario"), operario: v("operario") || null, foto_path, tipo: tipoActual() };
-    const { data, error } = await sb.from("paquetes").insert(nuevo).select().single();
+      destinatario: v("destinatario"), operario: v("operario") || null, foto_path, fotos, tipo: tipoActual(), ambito: tipoActual() === "Entrada" ? ambSel : null };
+    let { data, error } = await sb.from("paquetes").insert(nuevo).select().single();
+    if (error && /ambito/.test(error.message)) throw new Error("falta la columna «ambito» en Supabase (ejecuta el SQL de empresa/personal)");
+    if (error && /fotos/.test(error.message)){ delete nuevo.fotos; ({ data, error } = await sb.from("paquetes").insert(nuevo).select().single()); if (!error && fotos.length > 1) toast("Solo se ha guardado la primera foto: falta activar varias fotos en Supabase"); }
     if (error){ if (/tipo/.test(error.message)) throw new Error("falta la columna «tipo» en Supabase (ejecuta el SQL de entradas y salidas)"); throw error; }
     const r = desdeBD(data);
-    if (fotoBlob && foto_path) fotoUrls[foto_path] = URL.createObjectURL(fotoBlob);
     const tSel = tipoActual(); $("#f").reset(); $("#bultos").value = 1; resetFoto(); $("#operario").value = v_operario(); document.querySelector(`input[name=tipo][value="${tSel}"]`).checked = true; aplicarTipo();
     await refrescarUno(r.id);
     if (esSalida(r)){ $("#noticeSlot").innerHTML = ""; toast("Salida registrada · " + r.ref); }
@@ -730,13 +790,13 @@ function filtrados(){
   if (q) list = list.filter(r => norm([r.ref,r.proveedor,r.transportista,r.pedido,r.destinatario,r.obs].join(" ")).includes(q));
   return list;
 }
-const thumbHTML = (r, cls) => r.fotoPath && fotoSrc(r) ? `<img class="${cls}" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" loading="lazy">`
+const thumbHTML = (r, cls) => r.fotoPath && fotoSrc(r) ? `<span class="twrap"${cls==="img" ? ' style="width:100%"' : ""}><img class="${cls}" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" loading="lazy">${r.fotoPaths.length > 1 ? `<span class="tcount">📷 ${r.fotoPaths.length}</span>` : ""}</span>`
   : `<span class="noimg ${cls==="img"?"":""}" style="background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</span>`;
 const estPill = r => `<span class="pill ${r.estado==="Correcto"?"p-ok":r.estado==="Dañado"?"p-bad":"p-warn"}">${esc(r.estado)}</span>`;
 const pills = r => { const n = nAvisos(r), d = dias(r);
   if (esSalida(r)) return `<span class="pill p-plum">Salida</span>` + estPill(r)
     + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Enviado" : "Pendiente de recoger · " + (d ? diasTxt(d) : "hoy")}</span>`;
-  return estPill(r) + (!n && r.recogido ? "" : `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`)
+  return estPill(r) + (r.ambito === "Personal" ? `<span class="pill p-amb">Personal</span>` : "") + (!n && r.recogido ? "" : `<span class="pill ${!n ? "p-warn" : n >= 3 && !r.recogido ? "p-bad" : "p-ok"}">${n ? n + (n === 1 ? " aviso" : " avisos") : "Sin avisar"}</span>`)
     + `<span class="pill ${r.recogido ? "p-n" : d >= 3 ? "p-bad" : "p-sky"}">${r.recogido ? "Recogido en " + diasTxt(d) : "En almacén · " + (d ? diasTxt(d) : "hoy")}</span>`; };
 const carrier = t => `<span class="carrier"><span class="mono" style="background:${monoColor(t)}">${esc(initials(t))}</span>${esc(t)}</span>`;
 
@@ -789,10 +849,15 @@ function openDrawer(id, irAviso){
   const {m, html} = noticeHTML(r);
   d.innerHTML = `<div class="dh"><div><div class="ecode">${esc(r.ref)}</div><h2>${esc(r.proveedor)}</h2></div><button class="iconbtn" aria-label="Cerrar" data-x><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="db">
-      ${r.fotoPath && fotoSrc(r) ? `<img class="big" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" data-zoom>` : `<div class="noimg" style="width:100%;height:auto;aspect-ratio:16/9;background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</div>`}
+      ${r.fotoPath && fotoSrc(r) ? `<img class="big" src="${esc(fotoSrc(r))}" alt="Foto ${esc(r.ref)}" data-zoom="0">` : `<div class="noimg" style="width:100%;height:auto;aspect-ratio:16/9;background:${monoColor(r.proveedor)}22">${BOX_SVG(monoColor(r.proveedor))}</div>`}
+      <div class="dgal">${r.fotoPaths.map((p,i) => fotoUrls[p] ? `<button type="button" data-zoom="${i}" ${i===0?'aria-current="true"':""} aria-label="Ver foto ${i+1}"><img src="${esc(fotoUrls[p])}" alt="" loading="lazy"></button>` : "").join("")}
+        ${r.fotoPaths.length < MAX_FOTOS ? `<label class="addf" for="dFoto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Añadir foto</label>` : ""}</div>
+      <input type="file" id="dFoto" accept="image/*" multiple hidden>
       <div class="pills">${pills(r)}</div>
       <dl class="dl">
         <dt>Tipo</dt><dd>${esSalida(r) ? `<span class="pill p-plum">Salida</span>` : `<span class="pill p-ok">Entrada</span>`}</dd>
+        ${esSalida(r) ? "" : `<dt>Paquete</dt><dd><div class="dseg" role="group" aria-label="Empresa o personal">${["Empresa","Personal"].map(a => `<button type="button" data-amb="${a}" aria-pressed="${r.ambito === a}">${a}</button>`).join("")}</div>
+          <div class="destorig">${r.ambito === "Personal" ? "Recogida de 12:00 a 13:00" : r.ambito === "Empresa" ? "Recogida en cualquier momento de la jornada" : "Sin indicar"}</div></dd>`}
         <dt>${esSalida(r) ? "Fecha" : "Llegada"}</dt><dd>${fmt(r.fecha)}</dd>
         <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
         <dt>Nº pedido</dt><dd>${esc(r.pedido || "No aplica")}</dd>
@@ -824,6 +889,12 @@ function openDrawer(id, irAviso){
   const de = d.querySelector(".deste"), dv = d.querySelector(".destv"), di = d.querySelector("#destEdit");
   d.querySelector("[data-dest-edit]").onclick = () => { dv.hidden = true; de.hidden = false; di.value = r.destinatario; di.focus(); di.select(); };
   d.querySelector("[data-dest-no]").onclick = () => { de.hidden = true; dv.hidden = false; };
+  d.querySelectorAll("[data-amb]").forEach(b => b.addEventListener("click", async () => {
+    if (b.dataset.amb === r.ambito) return;
+    const { error } = await sb.from("paquetes").update({ ambito: b.dataset.amb }).eq("id", r.id);
+    if (error){ toast(/ambito/.test(error.message) ? "Falta activar empresa/personal en Supabase. Avisa a Pachi." : "No se pudo guardar: " + error.message); return; }
+    await refrescarUno(r.id); openDrawer(r.id); toast("Marcado como paquete " + b.dataset.amb.toLowerCase());
+  }));
   const guardarDest = async () => { const b = d.querySelector("[data-dest-ok]"); b.disabled = true; if (await cambiarDestinatario(r, di.value)) openDrawer(r.id); else b.disabled = false; };
   d.querySelector("[data-dest-ok]").onclick = guardarDest;
   di.addEventListener("keydown", e => { if (e.key === "Enter" && d.querySelector(".deste .menu").hidden){ e.preventDefault(); guardarDest(); } });
@@ -832,10 +903,38 @@ function openDrawer(id, irAviso){
   d.querySelector("[data-del-si]").onclick = async e => { const b = e.currentTarget; b.disabled = true; b.textContent = "Borrando…"; if (await borrar(r)) closeDrawer(); else { b.disabled = false; b.textContent = "Sí, borrar"; } };
   d.querySelector("[data-x]").onclick = () => closeDrawer();
   d.querySelector("[data-rec2]").onclick = () => { marcarRecogido(r.id, !r.recogido); closeDrawer(); };
-  d.querySelector("[data-zoom]")?.addEventListener("click", () => { const v = document.createElement("div"); v.className="viewer"; v.innerHTML = `<img src="${esc(fotoSrc(r))}" alt="Foto del paquete">`; v.onclick = () => v.remove(); document.body.appendChild(v); });
+  d.querySelectorAll("[data-zoom]").forEach(el => el.addEventListener("click", () => verFotos(r, +el.dataset.zoom)));
+  d.querySelector("#dFoto").addEventListener("change", async e => {
+    const files = [...e.target.files].filter(f => /^image\//.test(f.type)).slice(0, MAX_FOTOS - r.fotoPaths.length); e.target.value = "";
+    if (!files.length) return;
+    toast("Subiendo " + files.length + " foto" + (files.length>1?"s":"") + "…");
+    const blobs = []; for (const f of files){ try { blobs.push(await shrink(f)); } catch { blobs.push(f); } }
+    const nuevas = await subirFotos(blobs); if (!nuevas.length) return;
+    const todas = [...r.fotoPaths, ...nuevas];
+    const { error } = await sb.from("paquetes").update({ fotos: todas, foto_path: todas[0] }).eq("id", r.id);
+    if (error){ toast(/fotos/.test(error.message) ? "Falta activar varias fotos en Supabase. Avisa a Pachi." : "No se pudo guardar: " + error.message); return; }
+    await refrescarUno(r.id); openDrawer(r.id); toast("Foto" + (nuevas.length>1?"s":"") + " añadida" + (nuevas.length>1?"s":""));
+  });
   document.body.append(scrim, d);
   if (irAviso && !esSalida(r)){ const n = d.querySelector("#dAviso"); n.scrollIntoView({block:"start"}); n.querySelector("a.btn.primary").focus(); }
   else d.querySelector("[data-x]").focus();
+}
+function verFotos(r, idx){
+  const urls = r.fotoPaths.map(p => fotoUrls[p]).filter(Boolean); if (!urls.length) return;
+  let i = Math.min(idx || 0, urls.length - 1);
+  const v = document.createElement("div"); v.className = "viewer";
+  const pinta = () => { v.innerHTML = `<img src="${esc(urls[i])}" alt="Foto ${i+1} de ${urls.length}">` + (urls.length > 1 ? `<button class="vnav vprev" aria-label="Anterior">‹</button><button class="vnav vnext" aria-label="Siguiente">›</button><span class="vcount">${i+1} / ${urls.length}</span>` : ""); };
+  pinta();
+  v.addEventListener("click", e => {
+    if (e.target.closest(".vprev")){ i = (i - 1 + urls.length) % urls.length; pinta(); return; }
+    if (e.target.closest(".vnext")){ i = (i + 1) % urls.length; pinta(); return; }
+    v.remove(); document.removeEventListener("keydown", tecla);
+  });
+  const tecla = e => { if (!document.body.contains(v)) return document.removeEventListener("keydown", tecla); if (e.key === "ArrowLeft"){ i = (i - 1 + urls.length) % urls.length; pinta(); } if (e.key === "ArrowRight"){ i = (i + 1) % urls.length; pinta(); } };
+  document.addEventListener("keydown", tecla);
+  let x0 = null; v.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  v.addEventListener("touchend", e => { if (x0 === null || urls.length < 2) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50){ i = (i + (dx < 0 ? 1 : -1) + urls.length) % urls.length; pinta(); } x0 = null; });
+  document.body.appendChild(v);
 }
 function closeDrawer(keep){ document.querySelectorAll(".scrim,.drawer").forEach(x => x.remove()); if (!keep) drawerId = null; }
 document.addEventListener("keydown", e => { if (e.key==="Escape"){ const v = document.querySelector(".viewer"); if (v) v.remove(); else closeDrawer(); $("#expMenu").hidden = true; } });
@@ -849,12 +948,12 @@ document.querySelectorAll(".views button").forEach(b => b.addEventListener("clic
 $("#q").addEventListener("input", () => { mostrar = 100; render(); });
 
 /* ---------- exportar ---------- */
-const COLS = ["Referencia","Tipo","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Foto"];
+const COLS = ["Referencia","Tipo","Empresa / Personal","Fecha llegada","Proveedor","Transportista","Nº pedido","Bultos","Estado","Observaciones","Destinatario","Llegó a nombre de","Registrado por","Nº avisos","Primer aviso","Último aviso","Recogido","Fecha recogida","Días en almacén","Nº fotos","Foto"];
 let expUrls = {};
 function filasExport(list){
-  return list.map(r => [r.ref, r.tipo, fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario, r.destinatarioOriginal || "",
+  return list.map(r => [r.ref, r.tipo, r.ambito || "", fmt(r.fecha), r.proveedor, r.transportista, r.pedido || "", Number(r.bultos)||0, r.estado, r.obs || "", r.destinatario, r.destinatarioOriginal || "",
     r.operario || "", nAvisos(r), fmt(logAvisos(r)[0]), fmt(logAvisos(r).slice(-1)[0]), r.recogido ? "Sí" : "No", fmt(r.recogidoEn), dias(r),
-    r.fotoPath ? (expUrls[r.fotoPath] || "") : ""]);
+    r.fotoPaths.length, r.fotoPath ? (expUrls[r.fotoPath] || "") : ""]);
 }
 function guardar(filename, data){
   const blob = data instanceof Blob ? data : new Blob([data], { type: filename.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -877,9 +976,9 @@ async function exportar(tipo){
   }
   if (!window.XLSX){ toast("No se pudo cargar el generador de Excel; exportando en CSV."); return exportar("csv"); }
   const ws = XLSX.utils.aoa_to_sheet([COLS, ...data]);
-  ws["!cols"] = [14,9,17,24,18,14,8,12,32,20,20,18,10,17,17,10,17,14,50].map(w => ({wch:w}));
-  ws["!autofilter"] = { ref: "A1:S" + (data.length+1) };
-  data.forEach((r,i) => { if (r[18]) { const ref = "S" + (i+2); ws[ref].l = { Target: r[18], Tooltip: "Ver foto" }; } });
+  ws["!cols"] = [14,9,12,17,24,18,14,8,12,32,20,20,18,10,17,17,10,17,14,9,50].map(w => ({wch:w}));
+  ws["!autofilter"] = { ref: "A1:U" + (data.length+1) };
+  data.forEach((r,i) => { if (r[20]) { const ref = "U" + (i+2); ws[ref].l = { Target: r[20], Tooltip: "Ver foto" }; } });
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Paquetería");
   const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
   return guardar("paqueteria_kimitec_" + stamp + (tipo==="xlsx-f" ? "_filtrado" : "") + ".xlsx", new Uint8Array(out));
@@ -893,9 +992,9 @@ const v_operario = () => { try { return localStorage.getItem("pq_operario") || "
 function desdeBD(d){
   const log = Array.isArray(d.avisos_log) ? d.avisos_log : [];
   return { id: d.id, ref: d.ref, fecha: d.fecha, proveedor: d.proveedor, transportista: d.transportista, pedido: d.pedido || "",
-    bultos: d.bultos, estado: d.estado, obs: d.obs || "", destinatario: d.destinatario, operario: d.operario || "", fotoPath: d.foto_path || null,
+    bultos: d.bultos, estado: d.estado, obs: d.obs || "", destinatario: d.destinatario, operario: d.operario || "", fotoPath: (Array.isArray(d.fotos) && d.fotos.length ? d.fotos[0] : d.foto_path) || null, fotoPaths: Array.isArray(d.fotos) && d.fotos.length ? d.fotos : (d.foto_path ? [d.foto_path] : []),
     avisos: d.avisos || 0, avisosLog: log, avisado: (d.avisos || 0) > 0, avisadoEn: log[0] || null,
-    tipo: d.tipo || "Entrada", recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
+    tipo: d.tipo || "Entrada", ambito: d.ambito || null, recogido: !!d.recogido, recogidoEn: d.recogido_en, recogidoPor: d.recogido_por || "", destinatarioOriginal: d.destinatario_original || "" };
 }
 function setSync(t){ $("#sync").textContent = t; }
 async function refrescarUno(id){
@@ -904,7 +1003,8 @@ async function refrescarUno(id){
   rows = rows.filter(x => x.id !== id);
   if (data){ rows.push(desdeBD(data)); rows.sort((a,b) => String(b.fecha).localeCompare(String(a.fecha))); }
   render();
-  if (data && data.foto_path && !fotoUrls[data.foto_path]){ const { data: u } = await sb.storage.from(BUCKET).createSignedUrl(data.foto_path, 60*60*12); if (u) { fotoUrls[data.foto_path] = u.signedUrl; render(); } }
+  const falt = data ? desdeBD(data).fotoPaths.filter(p => !fotoUrls[p]) : [];
+  if (falt.length){ const { data: u } = await sb.storage.from(BUCKET).createSignedUrls(falt, 60*60*12); (u || []).forEach(x => { if (x.signedUrl) fotoUrls[x.path] = x.signedUrl; }); render(); }
 }
 async function cargar(){
   if (!sb) return false;
@@ -920,7 +1020,7 @@ async function cargar(){
   rows = data.map(desdeBD); ready = true; lastErr = "";
   setSync("Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }));
   render();
-  const faltan = [...new Set(rows.map(r => r.fotoPath).filter(p => p && !fotoUrls[p]))];
+  const faltan = [...new Set(rows.flatMap(r => r.fotoPaths).filter(p => p && !fotoUrls[p]))];
   if (faltan.length){
     for (let k = 0; k < faltan.length; k += 100){
       const { data: urls } = await sb.storage.from(BUCKET).createSignedUrls(faltan.slice(k, k+100), 60*60*12);
