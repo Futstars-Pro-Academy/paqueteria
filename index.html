@@ -157,7 +157,10 @@ button:focus-visible,a:focus-visible,.kpi:focus-visible{outline:2px solid var(--
 .dgal button{padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;background:none;aspect-ratio:1}
 .dgal button[aria-current="true"]{border-color:var(--accent)}
 .dgal img{width:100%;height:100%;object-fit:cover;display:block}
-.dgal .addf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px dashed var(--line);color:var(--accent);font-size:.7rem;font-weight:700;background:var(--field)}
+.fmsg{font-size:.86rem;font-weight:600;padding:8px 10px;border-radius:8px;background:var(--sky-soft);color:var(--sky)}
+.fmsg.err{background:var(--coral-soft);color:var(--coral)}
+.fmsg.ok{background:var(--accent-soft);color:var(--accent)}
+.dgal .addf{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px dashed var(--line);color:var(--accent);font-size:.7rem;font-weight:700;background:var(--field)}
 .viewer .vnav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:0;background:#fff3;color:#fff;font-size:1.6rem;cursor:pointer}
 .viewer .vprev{left:max(12px,env(safe-area-inset-left,0px))}.viewer .vnext{right:max(12px,env(safe-area-inset-right,0px))}
 .viewer .vcount{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);color:#fff;font-size:.85rem;background:#0008;padding:3px 10px;border-radius:999px}
@@ -498,6 +501,7 @@ const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerC
 function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const el=document.createElement("div"); el.className="toast"; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),3400); }
 const fotoSrc = r => fotoUrls[r.fotoPath] || "";
 const MAX_FOTOS = 10;
+const esImagen = f => f && (/^image\//.test(f.type) || (!f.type && /\.(jpe?g|png|heic|heif|webp|gif|bmp)$/i.test(f.name || "")) || (!f.type && !f.name));
 const esSalida = r => r.tipo === "Salida";
 const HORARIO = {
   Personal: "Al ser un paquete personal, el horario de recogida es de 12:00 a 13:00.",
@@ -673,7 +677,7 @@ function showNotice(r){
 
 /* ---------- foto ---------- */
 async function addFotos(files){
-  const imgs = [...(files || [])].filter(f => /^image\//.test(f.type));
+  const imgs = [...(files || [])].filter(esImagen);
   if (!imgs.length){ toast("Elige un archivo de imagen"); return; }
   for (const f of imgs){
     if (fotoBlobs.length >= MAX_FOTOS){ toast("Máximo " + MAX_FOTOS + " fotos por registro"); break; }
@@ -853,6 +857,7 @@ function openDrawer(id, irAviso){
       <div class="dgal">${r.fotoPaths.map((p,i) => fotoUrls[p] ? `<button type="button" data-zoom="${i}" ${i===0?'aria-current="true"':""} aria-label="Ver foto ${i+1}"><img src="${esc(fotoUrls[p])}" alt="" loading="lazy"></button>` : "").join("")}
         ${r.fotoPaths.length < MAX_FOTOS ? `<label class="addf" for="dFoto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Añadir foto</label>` : ""}</div>
       <input type="file" id="dFoto" accept="image/*" multiple hidden>
+      <div class="fmsg" id="dFotoMsg" role="status" hidden></div>
       <div class="pills">${pills(r)}</div>
       <dl class="dl">
         <dt>Tipo</dt><dd>${esSalida(r) ? `<span class="pill p-plum">Salida</span>` : `<span class="pill p-ok">Entrada</span>`}</dd>
@@ -904,20 +909,52 @@ function openDrawer(id, irAviso){
   d.querySelector("[data-x]").onclick = () => closeDrawer();
   d.querySelector("[data-rec2]").onclick = () => { marcarRecogido(r.id, !r.recogido); closeDrawer(); };
   d.querySelectorAll("[data-zoom]").forEach(el => el.addEventListener("click", () => verFotos(r, +el.dataset.zoom)));
-  d.querySelector("#dFoto").addEventListener("change", async e => {
-    const files = [...e.target.files].filter(f => /^image\//.test(f.type)).slice(0, MAX_FOTOS - r.fotoPaths.length); e.target.value = "";
-    if (!files.length) return;
-    toast("Subiendo " + files.length + " foto" + (files.length>1?"s":"") + "…");
-    const blobs = []; for (const f of files){ try { blobs.push(await shrink(f)); } catch { blobs.push(f); } }
-    const nuevas = await subirFotos(blobs); if (!nuevas.length) return;
-    const todas = [...r.fotoPaths, ...nuevas];
-    const { error } = await sb.from("paquetes").update({ fotos: todas, foto_path: todas[0] }).eq("id", r.id);
-    if (error){ toast(/fotos/.test(error.message) ? "Falta activar varias fotos en Supabase. Avisa a Pachi." : "No se pudo guardar: " + error.message); return; }
-    await refrescarUno(r.id); openDrawer(r.id); toast("Foto" + (nuevas.length>1?"s":"") + " añadida" + (nuevas.length>1?"s":""));
-  });
+  d.querySelector("#dFoto").addEventListener("change", e => anadirFotosRegistro(r.id, e.target, d));
   document.body.append(scrim, d);
   if (irAviso && !esSalida(r)){ const n = d.querySelector("#dAviso"); n.scrollIntoView({block:"start"}); n.querySelector("a.btn.primary").focus(); }
   else d.querySelector("[data-x]").focus();
+}
+let subiendoFotos = false;
+async function anadirFotosRegistro(id, input, d){
+  const msg = d.querySelector("#dFotoMsg");
+  const estado = (t, cls) => { msg.hidden = false; msg.className = "fmsg" + (cls ? " " + cls : ""); msg.textContent = t; };
+  const todosArch = [...(input.files || [])]; input.value = "";
+  if (!todosArch.length) return;
+  if (subiendoFotos){ estado("Espera, aún se están subiendo las fotos anteriores…"); return; }
+  const r0 = rows.find(x => x.id === id); if (!r0){ estado("No encuentro este registro. Recarga la app.", "err"); return; }
+  const libres = MAX_FOTOS - r0.fotoPaths.length;
+  const files = todosArch.filter(esImagen).slice(0, libres);
+  if (!files.length){ estado(libres <= 0 ? "Este registro ya tiene el máximo de " + MAX_FOTOS + " fotos." : "El archivo elegido no es una imagen.", "err"); return; }
+  subiendoFotos = true;
+  try {
+    estado("Preparando " + files.length + " foto" + (files.length>1?"s":"") + "…");
+    const blobs = []; for (const f of files){ try { blobs.push(await shrink(f)); } catch { blobs.push(f); } }
+    estado("Subiendo " + blobs.length + " foto" + (blobs.length>1?"s":"") + "…");
+    const nuevas = [], fallos = [];
+    for (const b of blobs){
+      const dt = new Date(), path = dt.getFullYear() + "/" + pad(dt.getMonth()+1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2)) + ".jpg";
+      const { error } = await sb.storage.from(BUCKET).upload(path, b, { contentType: b.type || "image/jpeg" });
+      if (error) fallos.push(error.message); else { nuevas.push(path); fotoUrls[path] = URL.createObjectURL(b); }
+    }
+    if (!nuevas.length){ estado("No se pudo subir ninguna foto: " + (fallos[0] || "error desconocido") + ". Pásale este mensaje a Pachi.", "err"); return; }
+    // Leer el registro actual de la base de datos (por si otro operario añadió fotos mientras tanto)
+    const { data: act } = await sb.from("paquetes").select("*").eq("id", id).maybeSingle();
+    const base = act ? desdeBD(act).fotoPaths : r0.fotoPaths;
+    const todas = [...base, ...nuevas];
+    let { data: upd, error } = await sb.from("paquetes").update({ fotos: todas, foto_path: todas[0] }).eq("id", id).select("id");
+    let aviso = "";
+    if (error && /fotos/.test(error.message)){
+      // Columna «fotos» no creada: guardar al menos la primera foto
+      ({ data: upd, error } = await sb.from("paquetes").update({ foto_path: todas[0] }).eq("id", id).select("id"));
+      aviso = " Solo se ha guardado una foto: falta ejecutar en Supabase el SQL de varias fotos.";
+    }
+    if (error){ estado("Las fotos se subieron pero no se pudieron unir al registro: " + error.message + ". Pásale este mensaje a Pachi.", "err"); await sb.storage.from(BUCKET).remove(nuevas); return; }
+    if (!upd || !upd.length){ estado("Las fotos se subieron pero el registro no se actualizó (falta permiso de edición en Supabase). Pásale este mensaje a Pachi.", "err"); await sb.storage.from(BUCKET).remove(nuevas); return; }
+    await refrescarUno(id);
+    if (drawerId === id){ openDrawer(id); const m2 = document.querySelector(".drawer #dFotoMsg"); if (m2){ m2.hidden = false; m2.className = "fmsg " + (aviso ? "err" : "ok"); m2.textContent = (nuevas.length > 1 ? nuevas.length + " fotos añadidas." : "Foto añadida.") + (fallos.length ? " " + fallos.length + " no se pudo subir." : "") + aviso; } }
+    else toast(nuevas.length > 1 ? nuevas.length + " fotos añadidas" : "Foto añadida");
+  } catch(err){ estado("Error al añadir fotos: " + (err.message || err) + ". Pásale este mensaje a Pachi.", "err"); }
+  finally { subiendoFotos = false; }
 }
 function verFotos(r, idx){
   const urls = r.fotoPaths.map(p => fotoUrls[p]).filter(Boolean); if (!urls.length) return;
