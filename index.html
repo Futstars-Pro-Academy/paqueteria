@@ -865,7 +865,11 @@ function openDrawer(id, irAviso){
           <div class="destorig">${r.ambito === "Personal" ? "Recogida de 12:00 a 13:00" : r.ambito === "Empresa" ? "Recogida en cualquier momento de la jornada" : "Sin indicar"}</div></dd>`}
         <dt>${esSalida(r) ? "Fecha" : "Llegada"}</dt><dd>${fmt(r.fecha)}</dd>
         <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
-        <dt>Nº pedido</dt><dd>${esc(r.pedido || "No aplica")}</dd>
+        <dt>Nº pedido</dt><dd data-edit="pedido">
+          <div class="destv ev"><span>${esc(r.pedido || "No aplica")}</span><button class="btn small" type="button" data-e-edit>${r.pedido ? "Cambiar" : "Añadir"}</button></div>
+          <div class="ee" hidden><input class="inp" inputmode="text" autocomplete="off" placeholder="Nº de pedido (vacío = no aplica)">
+            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" type="button" data-e-no>Cancelar</button><button class="btn small primary" type="button" data-e-ok>Guardar</button></div></div>
+        </dd>
         <dt>Bultos</dt><dd>${esc(r.bultos)}</dd>
         <dt>${esSalida(r) ? "Destinatario" : r.recogido ? "Retirado por" : "Destinatario"}</dt><dd>
           <div class="destv"><span>${esc(r.destinatario)}</span><button class="btn small" type="button" data-dest-edit>Cambiar</button></div>
@@ -873,7 +877,11 @@ function openDrawer(id, irAviso){
           <div class="deste" hidden><div class="combo" data-field="destinatario"><input class="inp" id="destEdit" placeholder="Persona que lo retira"></div>
             <div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" type="button" data-dest-no>Cancelar</button><button class="btn small primary" type="button" data-dest-ok>Guardar</button></div></div>
         </dd>
-        <dt>Observaciones</dt><dd>${esc(r.obs || "—")}</dd>
+        <dt>Observaciones</dt><dd data-edit="obs">
+          <div class="destv ev"><span style="white-space:pre-wrap">${esc(r.obs || "—")}</span><button class="btn small" type="button" data-e-edit>${r.obs ? "Editar" : "Añadir"}</button></div>
+          <div class="ee" hidden><textarea class="inp" rows="3" placeholder="Escribe las observaciones"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" type="button" data-e-no>Cancelar</button><button class="btn small primary" type="button" data-e-ok>Guardar</button></div></div>
+        </dd>
         <dt>Registrado por</dt><dd>${esc(who)}</dd>
         ${esSalida(r) ? "" : `<dt>Avisos enviados</dt><dd><span class="bignum">${nAvisos(r)}</span>${logAvisos(r).length ? `<ol class="alog">${logAvisos(r).map((t,i) => `<li>${ordinal(i+1)} aviso · ${fmt(t)}</li>`).join("")}</ol>` : `<span class="muted"> Pendiente del primer aviso</span>`}</dd>`}
         <dt>${esSalida(r) ? (r.recogido ? "Tardó en salir" : "Esperando recogida") : r.recogido ? "Tardó en recogerse" : "Lleva en almacén"}</dt><dd><span class="bignum" style="color:${!r.recogido && dias(r) >= 3 ? "var(--coral)" : "var(--ink)"}">${dias(r)}</span> ${dias(r) === 1 ? "día" : "días"}${r.recogido ? " · recogido el " + fmt(r.recogidoEn) : ""}</dd>
@@ -900,6 +908,23 @@ function openDrawer(id, irAviso){
     if (error){ toast(/ambito/.test(error.message) ? "Falta activar empresa/personal en Supabase. Avisa a Pachi." : "No se pudo guardar: " + error.message); return; }
     await refrescarUno(r.id); openDrawer(r.id); toast("Marcado como paquete " + b.dataset.amb.toLowerCase());
   }));
+  d.querySelectorAll("[data-edit]").forEach(dd => {
+    const campo = dd.dataset.edit, ev = dd.querySelector(".ev"), ee = dd.querySelector(".ee"), inp = ee.querySelector("input,textarea");
+    const combo = ee.querySelector(".combo"); if (combo) setupCombo(combo);
+    dd.querySelector("[data-e-edit]").onclick = () => { ev.hidden = true; ee.hidden = false; inp.value = r[campo] || ""; inp.focus(); if (inp.select) inp.select(); };
+    dd.querySelector("[data-e-no]").onclick = () => { ee.hidden = true; ev.hidden = false; };
+    const guardar = async () => {
+      const b = dd.querySelector("[data-e-ok]"), val = inp.value.trim();
+      if (val === (r[campo] || "")){ ee.hidden = true; ev.hidden = false; return; }
+      b.disabled = true; b.textContent = "Guardando…";
+      const { data: upd, error } = await sb.from("paquetes").update({ [campo]: val || null }).eq("id", r.id).select("id");
+      if (error || !upd || !upd.length){ toast("No se pudo guardar: " + (error ? error.message : "sin permiso de edición")); b.disabled = false; b.textContent = "Guardar"; return; }
+      await refrescarUno(r.id); openDrawer(r.id);
+      toast(campo === "pedido" ? (val ? "Nº de pedido guardado" : "Nº de pedido quitado") : "Observaciones guardadas");
+    };
+    dd.querySelector("[data-e-ok]").onclick = guardar;
+    if (inp.tagName === "INPUT") inp.addEventListener("keydown", e => { if (e.key === "Enter" && (!combo || combo.querySelector(".menu").hidden)){ e.preventDefault(); guardar(); } });
+  });
   const guardarDest = async () => { const b = d.querySelector("[data-dest-ok]"); b.disabled = true; if (await cambiarDestinatario(r, di.value)) openDrawer(r.id); else b.disabled = false; };
   d.querySelector("[data-dest-ok]").onclick = guardarDest;
   di.addEventListener("keydown", e => { if (e.key === "Enter" && d.querySelector(".deste .menu").hidden){ e.preventDefault(); guardarDest(); } });
