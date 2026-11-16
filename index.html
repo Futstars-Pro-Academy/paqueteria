@@ -486,7 +486,7 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
 
 <script>
 /* ===== Configuración ===== */
-const APP_VERSION = "2026-11-16.1";
+const APP_VERSION = "2026-11-16.2";
 const SUPABASE_URL = "https://rvjmvhgktfaaprpsivvf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ul9AtGOFZJZgCMAYa5uY1Q_0D7ErjSW";
 const LOGIN_EMAIL  = "almacen@kimitec.com";
@@ -506,9 +506,20 @@ const CFG_DEF = {
   personalCorto: "Recogida de 12:00 a 13:00",
   empresaCorto: "Recogida en horario laboral",
   despedida: "Un saludo,\nAlmacén · Kimitec",
+  reglas: "Administración = tmotos@kimitec.com",
   pin: "1234"
 };
 let CFG = { ...CFG_DEF }, cfgMeta = null;
+// Reglas «Departamento = correo1, correo2»: si el destinatario del paquete contiene ese nombre, se añaden esos correos
+function parseReglas(txt){
+  return String(txt || "").split("\n").map(l => l.trim()).filter(l => l && l.includes("=")).map(l => {
+    const i = l.indexOf("="); return { clave: l.slice(0, i).trim(), correos: l.slice(i + 1).split(/[;,\s]+/).map(x => x.trim()).filter(Boolean) };
+  }).filter(x => x.clave && x.correos.length);
+}
+function extrasPara(destinatario, cfg){
+  const n = norm(destinatario); if (!n) return [];
+  return parseReglas((cfg || CFG).reglas).filter(rg => n.includes(norm(rg.clave))).flatMap(rg => rg.correos);
+}
 const dests = () => (CFG.destinatarios || []).map(x => String(x).trim()).filter(Boolean);
 const DEFAULTS = {
   transportista: ["SEUR","MRW","DHL","GLS","Correos Express","Nacex","TNT / FedEx","UPS","DB Schenker","Transporte propio del proveedor"],
@@ -628,7 +639,7 @@ function mail(r, cfg){
   if (h) lines.push(rellenar(h, v));
   lines.push("", ...String(rellenar(C.despedida, v)).split("\n"));
   const body = lines.join("\n").replace(/\n{3,}/g, "\n\n");
-  const to = (C.destinatarios || []).map(x => String(x).trim()).filter(Boolean);
+  const to = [...new Set([...(C.destinatarios || []).map(x => String(x).trim()), ...extrasPara(r.destinatario, C)].filter(Boolean).map(x => x.toLowerCase()))];
   const q = "to="+encodeURIComponent(to.join(";"))+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   return { subject, body, to, web: "https://outlook.office.com/mail/deeplink/compose?" + q,
     app: "mailto:" + to.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body),
@@ -1150,10 +1161,14 @@ $("#logout").addEventListener("click", async () => { await sb.auth.signOut(); ro
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ready){ cargarCFG(); cargar(); } });
 
 /* ---------- ajustes del aviso ---------- */
+function pintarToForm(){
+  const d = [...new Set([...dests(), ...extrasPara(($("#destinatario") || {}).value || "")])];
+  $("#toForm").innerHTML = d.length ? d.map(x => `<b>${esc(x)}</b>`).join(", ").replace(/, (?=<b>[^<]*<\/b>$)/, " y ") : "<b>(sin destinatarios)</b>";
+}
 function aplicarCFG(){
   const d = dests();
   const html = d.length ? d.map(x => `<b>${esc(x)}</b>`).join(d.length > 1 ? ", " : "").replace(/, (?=<b>[^<]*<\/b>$)/, " y ") : "<b>(sin destinatarios)</b>";
-  $("#toHead").innerHTML = html; $("#toForm").innerHTML = html;
+  $("#toHead").innerHTML = html; pintarToForm();
   $("#hPerCorto").textContent = CFG.personalCorto; $("#hEmpCorto").textContent = CFG.empresaCorto;
 }
 async function cargarCFG(){
@@ -1166,6 +1181,7 @@ async function cargarCFG(){
 }
 const CAMPOS_AJ = [
   ["Destinatarios", [["destinatarios","Correos que reciben el aviso","Uno por línea.",3]]],
+  ["Correos extra según destinatario", [["reglas","Si el destinatario del paquete es…, añadir también…","Una regla por línea: Departamento = correo. Ejemplo: Administración = tmotos@kimitec.com. Para varios correos, sepáralos con comas. Vale aunque el destinatario esté escrito en mayúsculas, sin tildes o como «Dpto. Administración».",3]]],
   ["Asunto", [["asunto","Asunto del aviso","Variables: {proveedor} {pedido} {incidencia} {ref} {destinatario}. {pedido} pone « · Pedido 4500…» solo si hay pedido; {incidencia} pone « · DAÑADO» o « · INCOMPLETO» solo si lo hay.",1],
               ["asuntoRecordatorio","Delante del asunto en los recordatorios","{aviso} = 2º, 3º… aviso.",1]]],
   ["Mensaje", [["saludo","Saludo","",1],["introEntrada","Frase de llegada (primer aviso)","",2],
@@ -1213,7 +1229,7 @@ function pintarAjustes(d){
   const leer = () => { const c = { ...CFG }; body.querySelectorAll("[data-k]").forEach(el => { c[el.dataset.k] = el.dataset.k === "destinatarios" ? el.value.split(/[\n;,]+/).map(x => x.trim()).filter(Boolean) : el.value; }); return c; };
   const prev = () => {
     const c = leer(), ej = { ref: "PQ-" + dayKey(new Date()) + "-001", fecha: new Date().toISOString(), proveedor: "Amazon", transportista: "SEUR", pedido: "4500123456", bultos: 2, estado: "Correcto",
-      ambito: modo === "rec" ? "Personal" : modo, obs: "", destinatario: "Ana López", fotoPaths: ["x"], avisos: modo === "rec" ? 1 : 0, avisosLog: modo === "rec" ? [new Date(Date.now() - 2*86400000).toISOString()] : [], recogido: false };
+      ambito: modo === "rec" ? "Personal" : modo, obs: "", destinatario: modo === "Empresa" ? "Administración" : "Ana López", fotoPaths: ["x"], avisos: modo === "rec" ? 1 : 0, avisosLog: modo === "rec" ? [new Date(Date.now() - 2*86400000).toISOString()] : [], recogido: false };
     const m = mail(ej, c);
     body.querySelector("#ajPrev").textContent = "Para: " + m.to.join("; ") + "\nAsunto: " + m.subject + "\n\n" + m.body;
     body.querySelectorAll("[data-pv]").forEach(b => b.classList.toggle("primary", b.dataset.pv === modo));
@@ -1228,6 +1244,8 @@ function pintarAjustes(d){
     const malos = c.destinatarios.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
     if (!c.destinatarios.length){ toast("Pon al menos un destinatario"); return; }
     if (malos.length){ toast("Revisa estos correos: " + malos.join(", ")); return; }
+    const malosR = parseReglas(c.reglas).flatMap(rg => rg.correos).filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+    if (malosR.length){ toast("Revisa los correos de las reglas: " + malosR.join(", ")); return; }
     if (!String(c.pin || "").trim()){ toast("El PIN no puede quedar vacío"); return; }
     b.disabled = true; b.textContent = "Guardando…";
     const datos = {}; Object.keys(CFG_DEF).forEach(k => datos[k] = c[k]);
@@ -1238,6 +1256,7 @@ function pintarAjustes(d){
   };
 }
 $("#btnAjustes").addEventListener("click", abrirAjustes);
+["input","change","blur"].forEach(ev => $("#destinatario").addEventListener(ev, () => setTimeout(pintarToForm, 150)));
 
 /* ---------- versión y actualización automática ---------- */
 async function comprobarVersion(){
