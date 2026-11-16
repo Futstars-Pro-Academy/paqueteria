@@ -287,6 +287,16 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
 .viewer img{max-width:100%;max-height:100%;border-radius:6px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:11px 18px;border-radius:10px;font-size:.9rem;z-index:60;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 
+/* Ajustes */
+.aj .db{gap:14px}
+.aj fieldset{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.aj legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.aj textarea{min-height:44px}
+.aj .hint{font-size:.78rem;color:var(--muted);margin:0}
+.aj code{font-family:var(--f-mono);font-size:.76rem;background:var(--field);border:1px solid var(--line);border-radius:5px;padding:0 4px}
+.aj .prev{white-space:pre-wrap;font-family:var(--f-mono);font-size:.76rem;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
+.aj .tabs{display:flex;gap:6px;flex-wrap:wrap}
+.aj .foot{position:sticky;bottom:0;background:var(--panel);padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center}
 /* Acceso */
 .login{position:fixed;inset:0;z-index:80;background:linear-gradient(150deg,var(--g1),var(--g2) 65%,#2aa16b);display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
 .login form{background:var(--panel);color:var(--ink);border-radius:16px;padding:26px 22px;width:min(380px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px #0005}
@@ -319,8 +329,8 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
       <div class="hero-text">
         <span class="eyebrow">Almacén · Kimitec · Vícar</span>
         <h1>Registro de Paquetería</h1>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="testpill"><span class="dot" style="background:var(--g3);box-shadow:0 0 0 3px #7fd3a240"></span>Avisos a <b id="toHead">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b></span><button class="logout" id="logout" type="button" hidden>Cerrar sesión</button></div>
-        <span class="sync" id="sync"></span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="testpill"><span class="dot" style="background:var(--g3);box-shadow:0 0 0 3px #7fd3a240"></span>Avisos a <span id="toHead"></span></span><button class="logout" id="btnAjustes" type="button" hidden>⚙ Ajustes del aviso</button><button class="logout" id="logout" type="button" hidden>Cerrar sesión</button></div>
+        <span class="sync" id="sync"></span><span class="sync" id="ver" style="opacity:.75"></span>
       </div>
       <svg class="hero-art" viewBox="0 0 300 130" aria-hidden="true">
         <rect x="0" y="118" width="300" height="3" rx="1.5" fill="#ffffff40"/>
@@ -387,8 +397,8 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
       <div class="field" id="ambField">
         <span class="lbl" id="lblAmb">¿Es de empresa o personal?</span>
         <div class="ambs" id="ambs" role="radiogroup" aria-labelledby="lblAmb">
-          <input type="radio" name="ambito" id="a1" value="Empresa"><label for="a1" data-a="Empresa">Empresa<small>Recogida en horario laboral</small></label>
-          <input type="radio" name="ambito" id="a2" value="Personal"><label for="a2" data-a="Personal">Personal<small>Recogida de 12:00 a 13:00</small></label>
+          <input type="radio" name="ambito" id="a1" value="Empresa"><label for="a1" data-a="Empresa">Empresa<small id="hEmpCorto">Recogida en horario laboral</small></label>
+          <input type="radio" name="ambito" id="a2" value="Personal"><label for="a2" data-a="Personal">Personal<small id="hPerCorto">Recogida de 12:00 a 13:00</small></label>
         </div>
       </div>
       <div class="field">
@@ -418,7 +428,7 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
       </div>
       <div class="formmsg" id="msg" role="alert"></div>
       <button class="btn primary big" type="submit" id="save"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>Registrar y preparar aviso</button>
-      <div class="to" id="toHint">El aviso se abre en tu Outlook para <b id="toForm">almacen@kimitec.com</b> y <b>antonio.santiago@kimitec.com</b>; solo tienes que pulsar Enviar.</div>
+      <div class="to" id="toHint">El aviso se abre en tu Outlook para <span id="toForm"></span>; solo tienes que pulsar Enviar.</div>
     </form>
     <div id="noticeSlot"></div>
   </div>
@@ -476,13 +486,30 @@ section.log{display:flex;flex-direction:column;gap:14px;min-width:0}
 
 <script>
 /* ===== Configuración ===== */
+const APP_VERSION = "2026-11-16.1";
 const SUPABASE_URL = "https://rvjmvhgktfaaprpsivvf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ul9AtGOFZJZgCMAYa5uY1Q_0D7ErjSW";
 const LOGIN_EMAIL  = "almacen@kimitec.com";
 const BUCKET = "fotos";
 
-const DESTINATARIOS = ["almacen@kimitec.com", "antonio.santiago@kimitec.com"];
-const COMPRAS = DESTINATARIOS.join(";"); // el remitente es la cuenta que cada uno tenga abierta en Outlook
+/* ===== Ajustes del aviso (se editan desde la app: botón «⚙ Ajustes del aviso»; se guardan en Supabase, tabla «ajustes») ===== */
+const CFG_DEF = {
+  destinatarios: ["almacen@kimitec.com", "antonio.santiago@kimitec.com"],
+  asunto: "Llegada de paquetería · {proveedor}{pedido}{incidencia}",
+  asuntoRecordatorio: "RECORDATORIO ({aviso} aviso) · ",
+  saludo: "Hola,",
+  introEntrada: "Ha llegado al almacén la siguiente mercancía:",
+  introRecordatorio: "Te recordamos que sigue en el almacén, pendiente de recoger, esta mercancía. Lleva {dias} en el almacén y es el {aviso} aviso (primero el {primer}).",
+  pendiente: "Queda en el almacén pendiente de recogida.",
+  horarioPersonal: "Al ser un paquete personal, el horario de recogida es de 12:00 a 13:00.",
+  horarioEmpresa: "Al ser un paquete de empresa, puedes pasar a recogerlo en cualquier momento de la jornada laboral.",
+  personalCorto: "Recogida de 12:00 a 13:00",
+  empresaCorto: "Recogida en horario laboral",
+  despedida: "Un saludo,\nAlmacén · Kimitec",
+  pin: "1234"
+};
+let CFG = { ...CFG_DEF }, cfgMeta = null;
+const dests = () => (CFG.destinatarios || []).map(x => String(x).trim()).filter(Boolean);
 const DEFAULTS = {
   transportista: ["SEUR","MRW","DHL","GLS","Correos Express","Nacex","TNT / FedEx","UPS","DB Schenker","Transporte propio del proveedor"],
   destinatario: ["Compras","Almacén","Calidad","Laboratorio","Mantenimiento","Producción"],
@@ -503,10 +530,7 @@ const fotoSrc = r => fotoUrls[r.fotoPath] || "";
 const MAX_FOTOS = 10;
 const esImagen = f => f && (/^image\//.test(f.type) || (!f.type && /\.(jpe?g|png|heic|heif|webp|gif|bmp)$/i.test(f.name || "")) || (!f.type && !f.name));
 const esSalida = r => r.tipo === "Salida";
-const HORARIO = {
-  Personal: "Al ser un paquete personal, el horario de recogida es de 12:00 a 13:00.",
-  Empresa: "Al ser un paquete de empresa, puedes pasar a recogerlo en cualquier momento de la jornada laboral."
-};
+const horario = a => a === "Personal" ? CFG.horarioPersonal : a === "Empresa" ? CFG.horarioEmpresa : "";
 const isInc = r => r.estado && r.estado !== "Correcto";
 const esHoy = r => dayKey(new Date(r.fecha)) === dayKey(new Date());
 
@@ -584,26 +608,31 @@ const dias = r => diasEntre(r.fecha, r.recogido ? r.recogidoEn : null);
 const ordinal = n => n + "º";
 
 /* ---------- correo ---------- */
-function mail(r){
+const rellenar = (t, v) => String(t || "").replace(/\{(\w+)\}/g, (m, k) => k in v ? v[k] : m);
+function mail(r, cfg){
+  const C = cfg || CFG;
   const n = nAvisos(r), recordatorio = n >= 1 && !r.recogido;
-  const subject = (recordatorio ? "RECORDATORIO (" + ordinal(n+1) + " aviso) · " : "") + "Llegada de paquetería · " + r.proveedor + (r.pedido ? " · Pedido " + r.pedido : "") + (r.estado !== "Correcto" ? " · " + String(r.estado).toUpperCase() : "");
-  const lines = recordatorio
-    ? ["Hola,", "", "Te recordamos que sigue en el almacén, pendiente de recoger, esta mercancía. Lleva " + diasTxt(dias(r)).replace("el mismo día","menos de un día") + " en el almacén y es el " + ordinal(n+1) + " aviso (primero el " + fmt(logAvisos(r)[0]) + ").", ""]
-    : ["Hola,", "", "Ha llegado al almacén la siguiente mercancía:", ""];
+  const v = { proveedor: r.proveedor, ref: r.ref, destinatario: r.destinatario, transportista: r.transportista,
+    pedido: r.pedido ? " · Pedido " + r.pedido : "", incidencia: r.estado !== "Correcto" ? " · " + String(r.estado).toUpperCase() : "",
+    aviso: ordinal(n+1), dias: diasTxt(dias(r)).replace("el mismo día","menos de un día"), primer: fmt(logAvisos(r)[0]) };
+  const subject = (recordatorio ? rellenar(C.asuntoRecordatorio, v) : "") + rellenar(C.asunto, v);
+  const lines = [rellenar(C.saludo, v), "", rellenar(recordatorio ? C.introRecordatorio : C.introEntrada, v), ""];
   lines.push(
     "Referencia: " + r.ref, "Fecha y hora: " + fmt(r.fecha), "Proveedor: " + r.proveedor, "Transportista: " + r.transportista,
     "Nº pedido: " + (r.pedido || "No aplica"), "Bultos: " + r.bultos, "Estado: " + r.estado);
   if (r.ambito) lines.push("Tipo de paquete: " + r.ambito);
   if (r.obs) lines.push("Observaciones: " + r.obs);
-  lines.push("Destinatario: " + r.destinatario, "", r.fotoPaths.length ? (r.fotoPaths.length > 1 ? "Hay " + r.fotoPaths.length + " fotos disponibles" : "La foto está disponible") + " en el Registro de Paquetería del almacén." : "Sin foto adjunta.",
-    "Queda en el almacén pendiente de recogida.");
-  if (HORARIO[r.ambito]) lines.push(HORARIO[r.ambito]);
-  lines.push("", "Un saludo,", "Almacén · Kimitec");
-  const body = lines.join("\n");
-  const q = "to="+encodeURIComponent(COMPRAS)+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
-  return { subject, body, web: "https://outlook.office.com/mail/deeplink/compose?" + q, web365: "https://outlook.office365.com/mail/deeplink/compose?" + q,
-    app: "mailto:" + DESTINATARIOS.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body),
-    outlookApp: "ms-outlook://compose?to=" + encodeURIComponent(DESTINATARIOS.join(",")) + "&subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
+  lines.push("Destinatario: " + r.destinatario, "", r.fotoPaths.length ? (r.fotoPaths.length > 1 ? "Hay " + r.fotoPaths.length + " fotos disponibles" : "La foto está disponible") + " en el Registro de Paquetería del almacén." : "Sin foto adjunta.");
+  if (C.pendiente) lines.push(rellenar(C.pendiente, v));
+  const h = r.ambito === "Personal" ? C.horarioPersonal : r.ambito === "Empresa" ? C.horarioEmpresa : "";
+  if (h) lines.push(rellenar(h, v));
+  lines.push("", ...String(rellenar(C.despedida, v)).split("\n"));
+  const body = lines.join("\n").replace(/\n{3,}/g, "\n\n");
+  const to = (C.destinatarios || []).map(x => String(x).trim()).filter(Boolean);
+  const q = "to="+encodeURIComponent(to.join(";"))+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  return { subject, body, to, web: "https://outlook.office.com/mail/deeplink/compose?" + q,
+    app: "mailto:" + to.join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body),
+    outlookApp: "ms-outlook://compose?to=" + encodeURIComponent(to.join(",")) + "&subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
 }
 async function marcarAvisado(id){
   const r = rows.find(x => x.id === id); if (!r || !ready) return false;
@@ -652,7 +681,7 @@ function noticeHTML(r){
     <div><button class="btn small" type="button" data-done>Ya lo he enviado: marcar como avisado</button></div>` };
 }
 function wireNotice(box, r, m){
-  const vals = { to: DESTINATARIOS.join("; "), subject: m.subject, body: m.body };
+  const vals = { to: m.to.join("; "), subject: m.subject, body: m.body };
   box.querySelectorAll("[data-v]").forEach(el => el.textContent = vals[el.dataset.v]);
   box.querySelectorAll("[data-mark]").forEach(a => a.addEventListener("click", () => setTimeout(() => marcarAvisado(r.id), 2500)));
   box.querySelectorAll("[data-cp]").forEach(b => b.addEventListener("click", async () => {
@@ -862,7 +891,7 @@ function openDrawer(id, irAviso){
       <dl class="dl">
         <dt>Tipo</dt><dd>${esSalida(r) ? `<span class="pill p-plum">Salida</span>` : `<span class="pill p-ok">Entrada</span>`}</dd>
         ${esSalida(r) ? "" : `<dt>Paquete</dt><dd><div class="dseg" role="group" aria-label="Empresa o personal">${["Empresa","Personal"].map(a => `<button type="button" data-amb="${a}" aria-pressed="${r.ambito === a}">${a}</button>`).join("")}</div>
-          <div class="destorig">${r.ambito === "Personal" ? "Recogida de 12:00 a 13:00" : r.ambito === "Empresa" ? "Recogida en cualquier momento de la jornada" : "Sin indicar"}</div></dd>`}
+          <div class="destorig">${r.ambito === "Personal" ? esc(CFG.personalCorto) : r.ambito === "Empresa" ? esc(CFG.empresaCorto) : "Sin indicar"}</div></dd>`}
         <dt>${esSalida(r) ? "Fecha" : "Llegada"}</dt><dd>${fmt(r.fecha)}</dd>
         <dt>Transportista</dt><dd>${carrier(r.transportista)}</dd>
         <dt>Nº pedido</dt><dd data-edit="pedido">
@@ -1101,10 +1130,11 @@ function escuchar(){
       else if (id) refrescarUno(id);
       else { clearTimeout(tRecarga); tRecarga = setTimeout(cargar, 400); }
     })
+    .on("postgres_changes", { event: "*", schema: "public", table: "ajustes" }, () => { cargarCFG().then(render); })
     .subscribe();
 }
-function mostrarLogin(){ $("#login").hidden = false; $("#logout").hidden = true; setTimeout(() => $("#pw").focus(), 50); }
-async function entrar(){ $("#login").hidden = true; $("#logout").hidden = false; await cargar(); escuchar(); }
+function mostrarLogin(){ $("#login").hidden = false; $("#logout").hidden = true; $("#btnAjustes").hidden = true; setTimeout(() => $("#pw").focus(), 50); }
+async function entrar(){ $("#login").hidden = true; $("#logout").hidden = false; $("#btnAjustes").hidden = false; await cargarCFG(); await cargar(); escuchar(); }
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const btn = $("#loginBtn"); btn.disabled = true; btn.textContent = "Entrando…"; $("#loginMsg").textContent = "";
@@ -1117,11 +1147,120 @@ $("#loginForm").addEventListener("submit", async e => {
   $("#pw").value = ""; entrar();
 });
 $("#logout").addEventListener("click", async () => { await sb.auth.signOut(); rows = []; ready = false; render(); mostrarLogin(); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ready) cargar(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ready){ cargarCFG(); cargar(); } });
+
+/* ---------- ajustes del aviso ---------- */
+function aplicarCFG(){
+  const d = dests();
+  const html = d.length ? d.map(x => `<b>${esc(x)}</b>`).join(d.length > 1 ? ", " : "").replace(/, (?=<b>[^<]*<\/b>$)/, " y ") : "<b>(sin destinatarios)</b>";
+  $("#toHead").innerHTML = html; $("#toForm").innerHTML = html;
+  $("#hPerCorto").textContent = CFG.personalCorto; $("#hEmpCorto").textContent = CFG.empresaCorto;
+}
+async function cargarCFG(){
+  try {
+    const { data, error } = await sb.from("ajustes").select("*").eq("id", 1).maybeSingle();
+    if (!error && data){ CFG = { ...CFG_DEF, ...(data.datos || {}) }; cfgMeta = { en: data.actualizado, por: data.actualizado_por }; }
+    else if (error) console.warn("Ajustes no disponibles, uso los de serie:", error.message);
+  } catch(e){ console.warn(e); }
+  aplicarCFG();
+}
+const CAMPOS_AJ = [
+  ["Destinatarios", [["destinatarios","Correos que reciben el aviso","Uno por línea.",3]]],
+  ["Asunto", [["asunto","Asunto del aviso","Variables: {proveedor} {pedido} {incidencia} {ref} {destinatario}. {pedido} pone « · Pedido 4500…» solo si hay pedido; {incidencia} pone « · DAÑADO» o « · INCOMPLETO» solo si lo hay.",1],
+              ["asuntoRecordatorio","Delante del asunto en los recordatorios","{aviso} = 2º, 3º… aviso.",1]]],
+  ["Mensaje", [["saludo","Saludo","",1],["introEntrada","Frase de llegada (primer aviso)","",2],
+               ["introRecordatorio","Frase de recordatorio","Variables: {dias} {aviso} {primer}.",3],
+               ["pendiente","Frase tras los datos del paquete","Déjalo vacío para no ponerla.",1],
+               ["despedida","Despedida y firma","Puede tener varias líneas.",2]]],
+  ["Horarios de recogida", [["horarioPersonal","En el correo · paquete personal","",2],["horarioEmpresa","En el correo · paquete de empresa","",2],
+               ["personalCorto","En la app · botón Personal","Texto corto bajo el botón del formulario.",1],["empresaCorto","En la app · botón Empresa","",1]]]
+];
+function abrirAjustes(){
+  closeDrawer(true);
+  const scrim = document.createElement("div"); scrim.className = "scrim"; scrim.onclick = () => closeDrawer();
+  const d = document.createElement("aside"); d.className = "drawer aj"; d.setAttribute("role","dialog"); d.setAttribute("aria-label","Ajustes del aviso");
+  d.innerHTML = `<div class="dh"><div><div class="ecode">Ajustes</div><h2>Correo de aviso</h2></div><button class="iconbtn" aria-label="Cerrar" data-x><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="db" id="ajBody">
+      <p class="hint">Estos ajustes se guardan para todos: en cuanto los guardes, todos los móviles usan los nuevos destinatarios y textos.</p>
+      <div class="field"><label class="lbl" for="ajPin">PIN de encargado</label><input class="inp" id="ajPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"></div>
+      <div class="formmsg" id="ajMsg" role="alert"></div>
+      <button class="btn primary" type="button" id="ajOk">Desbloquear</button>
+    </div>`;
+  document.body.append(scrim, d);
+  d.querySelector("[data-x]").onclick = () => closeDrawer();
+  const pin = d.querySelector("#ajPin"); pin.focus();
+  const desbloquear = () => {
+    if (pin.value.trim() !== String(CFG.pin || CFG_DEF.pin)){ d.querySelector("#ajMsg").textContent = "PIN incorrecto."; return; }
+    pintarAjustes(d);
+  };
+  d.querySelector("#ajOk").onclick = desbloquear;
+  pin.addEventListener("keydown", e => { if (e.key === "Enter") desbloquear(); });
+}
+function pintarAjustes(d){
+  const val = k => k === "destinatarios" ? dests().join("\n") : (CFG[k] ?? "");
+  const body = d.querySelector("#ajBody");
+  body.innerHTML = `${cfgMeta && cfgMeta.en ? `<p class="hint">Última modificación: ${fmt(cfgMeta.en)}${cfgMeta.por ? " · " + esc(cfgMeta.por) : ""}</p>` : ""}`
+    + CAMPOS_AJ.map(([leg, campos]) => `<fieldset><legend>${leg}</legend>` + campos.map(([k, lbl, hint, rows]) =>
+      `<div class="field"><label class="lbl" for="aj_${k}">${lbl}</label><textarea class="inp" id="aj_${k}" data-k="${k}" rows="${rows}" spellcheck="false">${esc(val(k))}</textarea>${hint ? `<p class="hint">${hint.replace(/\{(\w+)\}/g,"<code>{$1}</code>")}</p>` : ""}</div>`).join("") + `</fieldset>`).join("")
+    + `<fieldset><legend>PIN de encargado</legend><div class="field"><label class="lbl" for="aj_pin">PIN para entrar en estos ajustes</label><input class="inp" id="aj_pin" data-k="pin" value="${esc(CFG.pin || "")}" autocomplete="off"></div>
+       <p class="hint">Compártelo solo con quien deba poder cambiar el aviso.</p></fieldset>
+      <fieldset><legend>Vista previa</legend><div class="tabs"><button type="button" class="btn small" data-pv="Personal">Personal</button><button type="button" class="btn small" data-pv="Empresa">Empresa</button><button type="button" class="btn small" data-pv="rec">Recordatorio</button></div>
+       <div class="prev" id="ajPrev"></div></fieldset>`;
+  const foot = document.createElement("div"); foot.className = "foot";
+  foot.innerHTML = `<button class="btn small" type="button" data-def>Restaurar textos de serie</button><span style="display:flex;gap:8px"><button class="btn" type="button" data-x2>Cancelar</button><button class="btn primary" type="button" data-save>Guardar para todos</button></span>`;
+  d.appendChild(foot);
+  let modo = "Personal";
+  const leer = () => { const c = { ...CFG }; body.querySelectorAll("[data-k]").forEach(el => { c[el.dataset.k] = el.dataset.k === "destinatarios" ? el.value.split(/[\n;,]+/).map(x => x.trim()).filter(Boolean) : el.value; }); return c; };
+  const prev = () => {
+    const c = leer(), ej = { ref: "PQ-" + dayKey(new Date()) + "-001", fecha: new Date().toISOString(), proveedor: "Amazon", transportista: "SEUR", pedido: "4500123456", bultos: 2, estado: "Correcto",
+      ambito: modo === "rec" ? "Personal" : modo, obs: "", destinatario: "Ana López", fotoPaths: ["x"], avisos: modo === "rec" ? 1 : 0, avisosLog: modo === "rec" ? [new Date(Date.now() - 2*86400000).toISOString()] : [], recogido: false };
+    const m = mail(ej, c);
+    body.querySelector("#ajPrev").textContent = "Para: " + m.to.join("; ") + "\nAsunto: " + m.subject + "\n\n" + m.body;
+    body.querySelectorAll("[data-pv]").forEach(b => b.classList.toggle("primary", b.dataset.pv === modo));
+  };
+  body.addEventListener("input", prev);
+  body.querySelectorAll("[data-pv]").forEach(b => b.onclick = () => { modo = b.dataset.pv; prev(); });
+  prev();
+  foot.querySelector("[data-x2]").onclick = () => closeDrawer();
+  foot.querySelector("[data-def]").onclick = () => { body.querySelectorAll("[data-k]").forEach(el => { const k = el.dataset.k; if (k === "pin") return; el.value = k === "destinatarios" ? CFG_DEF.destinatarios.join("\n") : CFG_DEF[k]; }); prev(); toast("Textos de serie cargados. Pulsa «Guardar para todos» para aplicarlos."); };
+  foot.querySelector("[data-save]").onclick = async e => {
+    const c = leer(), b = e.currentTarget;
+    const malos = c.destinatarios.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+    if (!c.destinatarios.length){ toast("Pon al menos un destinatario"); return; }
+    if (malos.length){ toast("Revisa estos correos: " + malos.join(", ")); return; }
+    if (!String(c.pin || "").trim()){ toast("El PIN no puede quedar vacío"); return; }
+    b.disabled = true; b.textContent = "Guardando…";
+    const datos = {}; Object.keys(CFG_DEF).forEach(k => datos[k] = c[k]);
+    const { error } = await sb.from("ajustes").upsert({ id: 1, datos, actualizado: new Date().toISOString(), actualizado_por: v_operario() || null });
+    b.disabled = false; b.textContent = "Guardar para todos";
+    if (error){ toast(/ajustes/.test(error.message) || error.code === "42P01" ? "Falta crear la tabla «ajustes» en Supabase (ejecuta el SQL de ajustes)." : "No se pudo guardar: " + error.message); return; }
+    CFG = { ...CFG_DEF, ...datos }; cfgMeta = { en: new Date().toISOString(), por: v_operario() }; aplicarCFG(); render(); closeDrawer(); toast("Ajustes guardados para todos");
+  };
+}
+$("#btnAjustes").addEventListener("click", abrirAjustes);
+
+/* ---------- versión y actualización automática ---------- */
+async function comprobarVersion(){
+  try {
+    const res = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" });
+    const txt = await res.text(); const m = txt.match(/APP_VERSION = "([^"]+)"/);
+    if (m && m[1] !== APP_VERSION && !document.querySelector("#updBar")){
+      const bar = document.createElement("div"); bar.id = "updBar"; bar.className = "toast"; bar.style.cursor = "pointer";
+      bar.innerHTML = "Hay una versión nueva de la app · <b>Pulsa para actualizar</b>";
+      bar.onclick = () => location.replace(location.pathname + "?v=" + m[1]);
+      document.body.appendChild(bar);
+    }
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") comprobarVersion(); });
+setInterval(comprobarVersion, 15 * 60 * 1000);
 
 /* ---------- arranque ---------- */
 (async () => {
   render();
+  $("#ver").textContent = "· Versión " + APP_VERSION;
+  aplicarCFG();
+  comprobarVersion();
   $("#operario").value = v_operario();
   if (!window.supabase){ $("#list").innerHTML = `<div class="card state err">No se ha podido cargar el conector del registro (supabase-js). Comprueba la conexión a internet y recarga.</div>`; setSync("Error: no carga supabase-js"); return; }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
